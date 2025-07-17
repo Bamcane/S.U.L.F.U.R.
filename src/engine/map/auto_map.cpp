@@ -1,8 +1,8 @@
 #include <cstdio>
 
 #include <engine/console.h>
-#include <engine/storage.h>
 #include <engine/shared/linereader.h>
+#include <engine/storage.h>
 
 #include <game/mapitems.h>
 
@@ -15,7 +15,7 @@ CAutoMapper::CAutoMapper(class CMapCreater *pCreater)
 	m_FileLoaded = false;
 }
 
-void CAutoMapper::Load(const char* pTileName)
+void CAutoMapper::Load(const char *pTileName)
 {
 	char aPath[256];
 	str_format(aPath, sizeof(aPath), "automap/%s.rules", pTileName);
@@ -35,10 +35,9 @@ void CAutoMapper::Load(const char* pTileName)
 	while(const char *pLine = LineReader.Get())
 	{
 		// skip blank/empty lines as well as comments
-		if(str_length(pLine) > 0 && pLine[0] != '#' && pLine[0] != '\n' && pLine[0] != '\r'
-			&& pLine[0] != '\t' && pLine[0] != '\v' && pLine[0] != ' ')
+		if(str_length(pLine) > 0 && pLine[0] != '#' && pLine[0] != '\n' && pLine[0] != '\r' && pLine[0] != '\t' && pLine[0] != '\v' && pLine[0] != ' ')
 		{
-			if(pLine[0]== '[')
+			if(pLine[0] == '[')
 			{
 				// new configuration, get the name
 				pLine++;
@@ -120,13 +119,13 @@ void CAutoMapper::Load(const char* pTileName)
 
 	io_close(RulesFile);
 
-	str_format(aBuf, sizeof(aBuf),"loaded %s", aPath);
+	str_format(aBuf, sizeof(aBuf), "loaded %s", aPath);
 	m_pMapCreater->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "editor", aBuf);
 
 	m_FileLoaded = true;
 }
 
-const char* CAutoMapper::GetConfigName(int Index)
+const char *CAutoMapper::GetConfigName(int Index)
 {
 	if(Index < 0 || Index >= m_lConfigs.size())
 		return "";
@@ -160,7 +159,7 @@ void CAutoMapper::Proceed(SLayerTilemap *pLayer, int ConfigID)
 	for(int y = 0; y < pLayer->m_Height; y++)
 		for(int x = 0; x < pLayer->m_Width; x++)
 		{
-			CTile *pTile = &(pLayer->m_pTiles[y*pLayer->m_Width+x]);
+			CTile *pTile = &(pLayer->m_pTiles[y * pLayer->m_Width + x]);
 			if(pTile->m_Index == 0)
 				continue;
 
@@ -213,7 +212,7 @@ void CAutoMapper::Proceed(SLayerTilemap *pLayer, int ConfigID)
 				}
 
 				if(RespectRules &&
-					(pConf->m_aIndexRules[i].m_RandomValue <= 1 || (int)((float)rand() / ((float)RAND_MAX + 1) * pConf->m_aIndexRules[i].m_RandomValue) == 1))
+					(pConf->m_aIndexRules[i].m_RandomValue <= 1 || (int) ((float) rand() / ((float) RAND_MAX + 1) * pConf->m_aIndexRules[i].m_RandomValue) == 1))
 				{
 					pTile->m_Index = pConf->m_aIndexRules[i].m_ID;
 					pTile->m_Flags = pConf->m_aIndexRules[i].m_Flag;

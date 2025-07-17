@@ -286,22 +286,30 @@ void CGameController::Tick()
 
 	GameServer()->BotManager()->Tick();
 	// do special loop
-	for(auto& pPlayer : GameServer()->m_apPlayers)
+	for(auto &pPlayer : GameServer()->m_apPlayers)
 	{
-		if(!pPlayer) continue;
-		if(!pPlayer->GetCharacter()) continue;
+		if(!pPlayer)
+			continue;
+		if(!pPlayer->GetCharacter())
+			continue;
 		CCharacter *pChr = pPlayer->GetCharacter();
-		if(pChr->GetPos().x < -480.f)
+		if(pChr->GetPos().x < -1200.f)
 		{
 			float x = -pChr->GetPos().x + pChr->GameWorld()->Collision()->GetWidth() * 32.f;
 			float y = pChr->GetPos().y;
+
+			GameServer()->CreatePlayerSpawn(pChr->GetPos(), pChr->GameWorld()->CmaskAllInWorld());
 			pChr->SetPos(vec2(x, y));
+			GameServer()->CreatePlayerSpawn(pChr->GetPos(), pChr->GameWorld()->CmaskAllInWorld());
 		}
-		else if(pChr->GetPos().x > pChr->GameWorld()->Collision()->GetWidth() * 32.f + 480.f)
+		else if(pChr->GetPos().x > pChr->GameWorld()->Collision()->GetWidth() * 32.f + 1200.f)
 		{
 			float x = -(pChr->GetPos().x - pChr->GameWorld()->Collision()->GetWidth() * 32.f);
 			float y = pChr->GetPos().y;
+
+			GameServer()->CreatePlayerSpawn(pChr->GetPos(), pChr->GameWorld()->CmaskAllInWorld());
 			pChr->SetPos(vec2(x, y));
+			GameServer()->CreatePlayerSpawn(pChr->GetPos(), pChr->GameWorld()->CmaskAllInWorld());
 		}
 	}
 }
@@ -341,7 +349,7 @@ bool CGameController::IsTeamChangeAllowed() const
 
 bool CGameController::OnPlayerChat(int ClientID, const char *pMessage)
 {
-	for(auto& [BotID, pBot] : GameServer()->BotManager()->m_vpBots)
+	for(auto &[BotID, pBot] : GameServer()->BotManager()->m_vpBots)
 	{
 		if(pBot->TriggerGo(ClientID, pMessage))
 			return false;

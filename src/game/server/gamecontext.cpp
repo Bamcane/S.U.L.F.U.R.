@@ -61,7 +61,7 @@ CGameContext::~CGameContext()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		delete m_apPlayers[i];
-	for(auto& [WorldID, pWorld] : m_upWorlds)
+	for(auto &[WorldID, pWorld] : m_upWorlds)
 		delete pWorld;
 	if(!m_Resetting)
 		delete m_pVoteOptionHeap;
@@ -478,7 +478,7 @@ void CGameContext::AbortVoteOnTeamChange(int ClientID)
 void CGameContext::OnTick()
 {
 	// copy tuning
-	for(auto& [WorldID, pWorld] : m_upWorlds)
+	for(auto &[WorldID, pWorld] : m_upWorlds)
 	{
 		pWorld->m_Core.m_Tuning = m_Tuning;
 		pWorld->Tick();
@@ -629,7 +629,7 @@ void CGameContext::OnClientEnter(int ClientID)
 	NewClientInfoMsg.m_pName = Server()->ClientName(ClientID);
 	NewClientInfoMsg.m_pClan = Server()->ClientClan(ClientID);
 	NewClientInfoMsg.m_Country = Server()->ClientCountry(ClientID);
-	NewClientInfoMsg.m_Silent = false;
+	NewClientInfoMsg.m_Silent = true;
 
 	if(Config()->m_SvSilentSpectatorMode && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
 		NewClientInfoMsg.m_Silent = true;
@@ -709,7 +709,7 @@ void CGameContext::OnClientTeamChange(int ClientID)
 	if(m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
 		AbortVoteOnTeamChange(ClientID);
 
-	for(auto& [WorldID, pWorld] : m_upWorlds)
+	for(auto &[WorldID, pWorld] : m_upWorlds)
 	{
 		// mark client's projectile has team projectile
 		CProjectile *p = (CProjectile *) pWorld->FindFirst(CGameWorld::ENTTYPE_PROJECTILE);
@@ -747,7 +747,7 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1);
 	}
 
-	for(auto& [WorldID, pWorld] : m_upWorlds)
+	for(auto &[WorldID, pWorld] : m_upWorlds)
 	{
 		// mark client's projectile has team projectile
 		CProjectile *p = (CProjectile *) pWorld->FindFirst(CGameWorld::ENTTYPE_PROJECTILE);
@@ -1525,7 +1525,7 @@ void CGameContext::OnSnap(int ClientID)
 void CGameContext::OnPreSnap() {}
 void CGameContext::OnPostSnap()
 {
-	for(auto& [WorldID, pWorld] : m_upWorlds)
+	for(auto &[WorldID, pWorld] : m_upWorlds)
 		pWorld->PostSnap();
 	m_Events.Clear();
 	m_pBotManager->PostSnap();

@@ -141,6 +141,7 @@ public:
 		bool m_Quitting;
 		const IConsole::CCommandInfo *m_pRconCmdToSend;
 		Uuid m_MapID;
+		bool m_MapChangeRequest;
 
 		bool IncludedInServerInfo() const
 		{

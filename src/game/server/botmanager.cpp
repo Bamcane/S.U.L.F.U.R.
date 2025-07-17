@@ -1,7 +1,7 @@
 #include <engine/shared/config.h>
 
-#include <game/server/entities/oldtee.h>
 #include <game/server/entities/botentity.h>
+#include <game/server/entities/oldtee.h>
 
 #include "gamecontext.h"
 #include "gamecontroller.h"
@@ -196,7 +196,7 @@ bool CBotManager::CreateBot(CGameWorld *pWorld, bool OldTee)
 
 void CBotManager::Tick()
 {
-	for(auto& [WorldID, pWorld] : GameServer()->m_upWorlds)
+	for(auto &[WorldID, pWorld] : GameServer()->m_upWorlds)
 	{
 		if(pWorld->m_aNumSpawnPoints[1] && !m_OldTeeSpawned)
 			CreateBot(pWorld, true);

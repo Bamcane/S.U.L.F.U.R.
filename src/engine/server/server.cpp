@@ -33,8 +33,8 @@
 
 #include <signal.h>
 
-#include <thread>
 #include <mutex>
+#include <thread>
 
 volatile sig_atomic_t InterruptSignaled = 0;
 
@@ -246,6 +246,7 @@ void CServer::CClient::Reset()
 	m_SnapRate = CClient::SNAPRATE_INIT;
 	m_Score = 0;
 	m_MapChunk = 0;
+	m_MapChangeRequest = false;
 }
 
 CServer::CServer() :
@@ -259,7 +260,7 @@ CServer::CServer() :
 	m_RunServer = true;
 
 	str_copy(m_aShutdownReason, "Server shutdown", sizeof(m_aShutdownReason));
-	
+
 	m_uMapDatas.clear();
 
 	m_MapReload = false;
@@ -697,7 +698,8 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_MapID = pThis->m_BaseMapUuid;;
+	pThis->m_aClients[ClientID].m_MapID = pThis->m_BaseMapUuid;
+	;
 	pThis->m_aClients[ClientID].m_NoRconNote = false;
 	pThis->m_aClients[ClientID].m_Quitting = false;
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
@@ -1495,6 +1497,13 @@ int CServer::Run()
 				{
 					if(m_aClients[c].m_State == CClient::STATE_EMPTY)
 						continue;
+					if(m_aClients[c].m_MapChangeRequest)
+					{
+						SendMap(c);
+						m_aClients[c].Reset();
+						m_aClients[c].m_State = GameServer()->IsClientSpectator(c) ? CClient::STATE_CONNECTING_AS_SPEC : CClient::STATE_CONNECTING;
+						continue;
+					}
 					for(int i = 0; i < 200; i++)
 					{
 						if(m_aClients[c].m_aInputs[i].m_GameTick == Tick())
@@ -1819,16 +1828,14 @@ void CServer::SnapSetStaticsize(int ItemType, int Size)
 
 void CServer::SwitchClientMap(int ClientID, Uuid MapID)
 {
-	m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
 	m_aClients[ClientID].m_MapID = MapID;
-	SendMap(ClientID);
+	m_aClients[ClientID].m_MapChangeRequest = true;
 }
 
 void CServer::RequestNewWorld(int ClientID, const char *pWorldName)
 {
 	static std::mutex s_WorldLock;
-	std::thread([this](int ClientID, string WorldName)
-	{
+	std::thread([this](int ClientID, string WorldName) {
 		s_WorldLock.lock();
 
 		Uuid MapUuid = CalculateUuid(WorldName);
@@ -1841,7 +1848,9 @@ void CServer::RequestNewWorld(int ClientID, const char *pWorldName)
 		SwitchClientMap(ClientID, MapUuid);
 
 		s_WorldLock.unlock();
-	}, ClientID, string(pWorldName)).detach();
+	},
+		ClientID, string(pWorldName))
+		.detach();
 }
 
 static CServer *CreateServer() { return new CServer(); }

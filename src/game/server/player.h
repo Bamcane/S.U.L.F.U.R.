@@ -115,6 +115,7 @@ public:
 	int m_TeleportTimer;
 	char m_aTeleTo[64];
 	void TeleTo(const char *pTo);
+
 private:
 	CCharacter *m_pCharacter;
 	CGameWorld *m_pGameWorld;

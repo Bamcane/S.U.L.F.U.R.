@@ -230,7 +230,7 @@ void CGameWorld::Tick()
 int64 CGameWorld::CmaskAllInWorld()
 {
 	int64 Mask = 0LL;
-	for(auto& pPlayer : GameServer()->m_apPlayers)
+	for(auto &pPlayer : GameServer()->m_apPlayers)
 	{
 		if(pPlayer && pPlayer->GameWorld() == this)
 		{

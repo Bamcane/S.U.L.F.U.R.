@@ -300,31 +300,31 @@ SGroupInfo *CMapCreater::AddGroup(const char *pName)
 	return pGroup;
 }
 
-void CMapCreater::AutoMap(SLayerTilemap *pTilemap, const char* pConfigName)
+void CMapCreater::AutoMap(SLayerTilemap *pTilemap, const char *pConfigName)
 {
-    CAutoMapper AutoMapper(this);
+	CAutoMapper AutoMapper(this);
 
-    AutoMapper.Load(pTilemap->m_pImage->m_aName);
+	AutoMapper.Load(pTilemap->m_pImage->m_aName);
 
-    if(!AutoMapper.IsLoaded())
-        return;
+	if(!AutoMapper.IsLoaded())
+		return;
 
-    int ConfigID = -1;
-    for(int i = 0; i < AutoMapper.ConfigNamesNum(); i ++)
-    {
-        if(str_comp(AutoMapper.GetConfigName(i), pConfigName) == 0)
-        {
-            ConfigID = i;
-            break;
-        }
-    }
+	int ConfigID = -1;
+	for(int i = 0; i < AutoMapper.ConfigNamesNum(); i++)
+	{
+		if(str_comp(AutoMapper.GetConfigName(i), pConfigName) == 0)
+		{
+			ConfigID = i;
+			break;
+		}
+	}
 
-    if(ConfigID == -1)
-    {
-        return;
-    }
+	if(ConfigID == -1)
+	{
+		return;
+	}
 
-    AutoMapper.Proceed(pTilemap, ConfigID);
+	AutoMapper.Proceed(pTilemap, ConfigID);
 }
 
 static std::mutex s_LayerMutex;

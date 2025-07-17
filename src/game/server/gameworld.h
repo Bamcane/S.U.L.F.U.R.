@@ -3,8 +3,8 @@
 #ifndef GAME_SERVER_GAMEWORLD_H
 #define GAME_SERVER_GAMEWORLD_H
 
-#include <game/gamecore.h>
 #include <game/collision.h>
+#include <game/gamecore.h>
 
 #define MAX_CHECK_ENTITY 128
 
@@ -58,6 +58,7 @@ private:
 	class IServer *m_pServer;
 
 	CCollision m_Collision;
+
 public:
 	class CGameContext *GameServer() { return m_pGameServer; }
 	class CConfig *Config() { return m_pConfig; }

@@ -11,9 +11,9 @@
 #include "oldtee.h"
 
 COldTee::COldTee(CGameWorld *pWorld, vec2 Pos, Uuid BotID, STeeInfo TeeInfo) :
-    CBotEntity(pWorld, Pos, BotID, TeeInfo)
+	CBotEntity(pWorld, Pos, BotID, TeeInfo)
 {
-    m_Emote = EMOTE_SURPRISE;
+	m_Emote = EMOTE_SURPRISE;
 	m_RandomEmoteTimer = random_int() % 500 + 500;
 }
 
@@ -26,7 +26,7 @@ bool COldTee::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, int W
 {
 	if(pFrom->GetObjType() == CGameWorld::ENTTYPE_CHARACTER && Weapon == WEAPON_HAMMER)
 	{
-		int ClientID = ((CCharacter *)pFrom)->GetPlayer()->GetCID();
+		int ClientID = ((CCharacter *) pFrom)->GetPlayer()->GetCID();
 		GameServer()->BotManager()->SendChat(ClientID, "Where do you want to go?", GetBotID());
 		GameServer()->BotManager()->SendChat(ClientID, "If you have decided, just tell me.", GetBotID());
 		GameServer()->BotManager()->SendChat(ClientID, "For example: March23840.", GetBotID());
@@ -74,11 +74,11 @@ void COldTee::Snap(int SnappingClient)
 		m_SendCore.Write(pCharacter);
 	}
 
-    if(GameServer()->GetPlayerChar(SnappingClient))
-    {
+	if(GameServer()->GetPlayerChar(SnappingClient))
+	{
 		vec2 TargetPos = GameServer()->GetPlayerChar(SnappingClient)->GetPos() - GetPos();
-        pCharacter->m_Angle = (int) (angle(TargetPos) * 256.0f);
-    }
+		pCharacter->m_Angle = (int) (angle(TargetPos) * 256.0f);
+	}
 
 	pCharacter->m_Emote = m_Emote;
 

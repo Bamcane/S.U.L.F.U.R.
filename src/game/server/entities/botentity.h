@@ -30,6 +30,7 @@ public:
 	virtual const char *GetName() { return ""; }
 
 	virtual bool TriggerGo(int ClientID, const char *pGoTo) { return false; }
+
 protected:
 	STeeInfo m_TeeInfos;
 	Uuid m_BotID;

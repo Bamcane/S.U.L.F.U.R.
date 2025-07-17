@@ -16,7 +16,7 @@ class CAutoMapper
 
 		enum
 		{
-			EMPTY=0,
+			EMPTY = 0,
 			FULL,
 			INDEX,
 			NOTINDEX,
@@ -41,18 +41,18 @@ class CAutoMapper
 public:
 	CAutoMapper(class CMapCreater *pCreater);
 
-	void Load(const char* pTileName);
+	void Load(const char *pTileName);
 	void Proceed(struct SLayerTilemap *pLayer, int ConfigID);
 
 	int ConfigNamesNum() { return m_lConfigs.size(); }
-	const char* GetConfigName(int Index);
+	const char *GetConfigName(int Index);
 
 	bool IsLoaded() { return m_FileLoaded; }
+
 private:
 	array<CConfiguration> m_lConfigs;
 	class CMapCreater *m_pMapCreater;
 	bool m_FileLoaded;
 };
-
 
 #endif
