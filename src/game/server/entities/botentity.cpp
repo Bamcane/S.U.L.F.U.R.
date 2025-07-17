@@ -139,7 +139,18 @@ void CBotEntity::Snap(int SnappingClient)
 {
 	int ClientID = GameServer()->BotManager()->FindClientID(SnappingClient, GetBotID());
 	if(ClientID == -1)
+	{
+		if(NetworkClipped(SnappingClient))
+			return;
+		CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
+		if(!pP)
+			return;
+
+		pP->m_X = round_to_int(m_Pos.x);
+		pP->m_Y = round_to_int(m_Pos.y);
+		pP->m_Type = PICKUP_HAMMER;
 		return;
+	}
 
 	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, ClientID, sizeof(CNetObj_PlayerInfo)));
 	if(!pPlayerInfo)

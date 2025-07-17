@@ -61,7 +61,7 @@ void CEventHandler::Snap(int SnappingClient)
 	for(int i = 0; i < m_aNumEvents[SnappingClient]; i++)
 	{
 		CNetEvent_Common *pEvent = (CNetEvent_Common *) &m_aaData[SnappingClient][m_aaOffsets[SnappingClient][i]];
-		if(!NetworkClipped(SnappingClient, vec2(pEvent->m_X, pEvent->m_Y), GameServer()))
+		if(!NetworkClipped(SnappingClient, vec2(pEvent->m_X, pEvent->m_Y), GameServer(), GameServer()->m_apPlayers[SnappingClient]->GameWorld()))
 		{
 			void *pData = GameServer()->Server()->SnapNewItem(m_aaTypes[SnappingClient][i], i, m_aaSizes[SnappingClient][i]);
 			if(pData)

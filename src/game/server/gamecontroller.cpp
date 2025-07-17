@@ -349,12 +349,12 @@ bool CGameController::IsTeamChangeAllowed() const
 
 bool CGameController::OnPlayerChat(int ClientID, const char *pMessage)
 {
-	for(auto &[BotID, pBot] : GameServer()->BotManager()->m_vpBots)
-	{
-		if(pBot->TriggerGo(ClientID, pMessage))
-			return false;
-	}
 	return true;
+}
+
+void CGameController::OnPlayerTeleport(int ClientID, const char *pString)
+{
+	GameServer()->BotManager()->m_pOldTee->TriggerGo(ClientID, pString);
 }
 
 void CGameController::SendGameInfo(int ClientID)
@@ -426,8 +426,8 @@ void CGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type) const
 	for(unsigned i = 0; i < pEval->m_pWorld->m_aNumSpawnPoints[Type]; i++)
 	{
 		// check if the position is occupado
-		CCharacter *apEnts[MAX_CLIENTS];
-		int Num = pEval->m_pWorld->FindEntities(pEval->m_pWorld->m_aaSpawnPoints[Type][i], 64, (CEntity **) apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+		CBaseDamageEntity *apEnts[MAX_CHECK_ENTITY];
+		int Num = pEval->m_pWorld->FindEntities(pEval->m_pWorld->m_aaSpawnPoints[Type][i], 64, (CEntity **) apEnts, MAX_CHECK_ENTITY, EEntityFlag::ENTFLAG_DAMAGE);
 		vec2 Positions[5] = {vec2(0.0f, 0.0f), vec2(-32.0f, 0.0f), vec2(0.0f, -32.0f), vec2(32.0f, 0.0f), vec2(0.0f, 32.0f)}; // start, left, up, right, down
 		int Result = -1;
 		for(int Index = 0; Index < 5 && Result == -1; ++Index)

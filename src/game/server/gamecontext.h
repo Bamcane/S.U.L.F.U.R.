@@ -64,6 +64,8 @@ class CGameContext : public IGameServer
 	static void NewCommandHook(const CCommandManager::CCommand *pCommand, void *pContext);
 	static void RemoveCommandHook(const CCommandManager::CCommand *pCommand, void *pContext);
 
+	static void ComGoto(IConsole::IResult *pResult, void *pUserData);
+
 	CGameContext(int Resetting);
 	void Construct(int Resetting);
 
@@ -205,6 +207,6 @@ inline int64 CmaskOne(int ClientID) { return (int64) 1 << ClientID; }
 inline int64 CmaskAllExceptOne(int ClientID) { return CmaskAll() ^ CmaskOne(ClientID); }
 inline bool CmaskIsSet(int64 Mask, int ClientID) { return (Mask & CmaskOne(ClientID)) != 0; }
 
-int NetworkClipped(int SnappingClient, vec2 CheckPos, CGameContext *pGameServer);
+int NetworkClipped(int SnappingClient, vec2 CheckPos, CGameContext *pGameServer, CGameWorld *pWorld);
 
 #endif // GAME_SERVER_GAMECONTEXT_H

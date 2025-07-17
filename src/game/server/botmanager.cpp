@@ -22,7 +22,7 @@ CBotManager::CBotManager(CGameContext *pGameServer)
 {
 	m_pGameServer = pGameServer;
 	m_pWorldCore = new CWorldCore();
-	m_OldTeeSpawned = false;
+	m_pOldTee = nullptr;
 
 	m_vMarkedAsDestroy.clear();
 	m_vpBots.clear();
@@ -190,7 +190,7 @@ bool CBotManager::CreateBot(CGameWorld *pWorld, bool OldTee)
 	m_vpBots[FreeID] = pBot;
 
 	if(OldTee)
-		m_OldTeeSpawned = true;
+		m_pOldTee = pBot;
 	return true;
 }
 
@@ -198,7 +198,7 @@ void CBotManager::Tick()
 {
 	for(auto &[WorldID, pWorld] : GameServer()->m_upWorlds)
 	{
-		if(pWorld->m_aNumSpawnPoints[1] && !m_OldTeeSpawned)
+		if(pWorld->m_aNumSpawnPoints[1] && !m_pOldTee)
 			CreateBot(pWorld, true);
 
 		while(m_vpBots.size() < pWorld->m_aNumSpawnPoints[2])

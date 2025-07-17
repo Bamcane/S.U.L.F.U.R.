@@ -21,7 +21,7 @@ class CBotManager
 
 	std::vector<Uuid> m_vMarkedAsDestroy;
 	std::unordered_map<Uuid, class CBotEntity *> m_vpBots;
-	bool m_OldTeeSpawned;
+	class CBotEntity *m_pOldTee;
 
 	void ClearPlayerMap(int ClientID);
 	void UpdatePlayerMap(int ClientID);

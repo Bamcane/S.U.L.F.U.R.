@@ -38,6 +38,7 @@ struct ILayerInfo
 
 	ELayerType m_Type;
 	int m_Flags;
+	bool m_UseInMinimap;
 
 	SImage *m_pImage;
 
@@ -45,6 +46,7 @@ struct ILayerInfo
 	{
 		m_pImage = nullptr;
 		m_Flags = 0;
+		m_UseInMinimap = false;
 	}
 };
 
@@ -103,9 +105,6 @@ struct SQuad
 
 struct SLayerQuads : public ILayerInfo
 {
-	int m_Width;
-	int m_Height;
-
 	ColorRGBA m_Color;
 
 	array<SQuad *> m_vpQuads;

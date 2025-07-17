@@ -850,7 +850,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					}
 
 					// execute command
-					CommandManager()->OnCommand(pCommand->m_aName, str_skip_whitespaces_const(str_skip_to_whitespace_const(pCommandStr)), -1);
+					CommandManager()->OnCommand(pCommand->m_aName, str_skip_whitespaces_const(str_skip_to_whitespace_const(pCommandStr)), ClientID);
 				}
 				else if(GameController()->OnPlayerChat(ClientID, pMsg->m_pMessage))
 				{
@@ -1458,6 +1458,14 @@ void CGameContext::RemoveCommandHook(const CCommandManager::CCommand *pCommand, 
 	pSelf->SendRemoveChatCommand(pCommand, -1);
 }
 
+void CGameContext::ComGoto(IConsole::IResult *pResult, void *pContext)
+{
+	CCommandManager::SCommandContext *pComContext = (CCommandManager::SCommandContext *)pContext;
+	CGameContext *pSelf = (CGameContext *)pComContext->m_pContext;
+
+	pSelf->GameController()->OnPlayerTeleport(pComContext->m_ClientID, pResult->GetString(0));
+}
+
 void CGameContext::OnInit()
 {
 	// init everything
@@ -1487,6 +1495,7 @@ void CGameContext::OnInit()
 	Console()->Chain("sv_vote_spectate", ConchainSettingUpdate, this);
 	Console()->Chain("sv_max_clients", ConchainSettingUpdate, this);
 
+	CommandManager()->AddCommand("goto", "Go to any where you want to", "r[text]", ComGoto, this);
 #ifdef CONF_DEBUG
 	// clamp dbg_dummies to 0..MAX_CLIENTS-1
 	if(MAX_CLIENTS <= Config()->m_DbgDummies)
@@ -1649,10 +1658,12 @@ void CGameContext::TeleportPlayerOutWorld(int ClientID, const char *pWorldName)
 		Server()->SwitchClientMap(ClientID, WorldID);
 }
 
-int NetworkClipped(int SnappingClient, vec2 CheckPos, CGameContext *pGameServer)
+int NetworkClipped(int SnappingClient, vec2 CheckPos, CGameContext *pGameServer, CGameWorld *pWorld)
 {
 	if(SnappingClient == -1)
 		return 0;
+	if(pGameServer->m_apPlayers[SnappingClient]->GameWorld() != pWorld)
+		return 1;
 
 	float dx = pGameServer->m_apPlayers[SnappingClient]->m_ViewPos.x - CheckPos.x;
 	float dy = pGameServer->m_apPlayers[SnappingClient]->m_ViewPos.y - CheckPos.y;

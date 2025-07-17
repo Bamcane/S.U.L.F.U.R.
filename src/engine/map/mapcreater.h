@@ -37,6 +37,7 @@ public:
 	SGroupInfo *AddGroup(const char *pName);
 
 	void AutoMap(SLayerTilemap *pTilemap, const char *pConfigName);
+	void AddMiniMap();
 
 	bool SaveMap(EMapType MapType, const char *pMap);
 };

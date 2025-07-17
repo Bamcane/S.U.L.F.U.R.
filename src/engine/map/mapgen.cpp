@@ -9,7 +9,6 @@
 #include <game/mapitems.h>
 
 #include <thread>
-#include <time.h>
 
 #include "mapcreater.h"
 #include "mapgen.h"
@@ -20,6 +19,7 @@
 #define MAP_WIDTH CHUNK_SIZE *MAP_CHUNK_WIDTH
 #define MAP_HEIGHT CHUNK_SIZE *MAP_CHUNK_HEIGHT
 #define ISLAND_THRESHOLD 0.3f
+#define STONE_THRESHOLD 0.95f
 #define DIRT_THRESHOLD 0.3f
 #define OCTAVES 4
 #define PERSISTENCE 0.3f
@@ -50,44 +50,44 @@ CMapGen::~CMapGen()
 
 void CMapGen::GenerateGameLayer()
 {
-	int Width = CHUNK_SIZE * MAP_CHUNK_WIDTH;
-	int Height = CHUNK_SIZE * MAP_CHUNK_HEIGHT;
-
 	// create tiles
 	SGroupInfo *pGroup = m_pMapCreater->AddGroup("Game");
 	SLayerTilemap *pLayer = pGroup->AddTileLayer("Game");
 	pLayer->m_Flags = TILESLAYERFLAG_GAME;
 
-	m_pGameTiles = pLayer->AddTiles(Width, Height);
+	m_pGameTiles = pLayer->AddTiles(MAP_WIDTH, MAP_HEIGHT);
 
-	int32_t IntSeed;
-	mem_copy(&IntSeed, &m_MapUuid.m_aData[0], sizeof(IntSeed));
-	const siv::PerlinNoise::seed_type Seed = IntSeed;
-	const siv::PerlinNoise Perlin{Seed};
-	mem_copy(&IntSeed, &m_MapUuid.m_aData[4], sizeof(IntSeed));
-	srand(IntSeed);
+	{
+		int32_t IntSeed;
+		mem_copy(&IntSeed, &m_MapUuid.m_aData[4], sizeof(IntSeed));
+		srand(IntSeed);
+	}
 
 	// fill tiles to solid
-	auto FillThread = [this, Width, Height, Perlin](int ChunkX, int ChunkY) {
+	auto FillThread = [this](int ChunkX, int ChunkY) {
 		CTile *pTiles = m_pGameTiles;
 		for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x++)
 		{
 			for(int y = ChunkY * CHUNK_SIZE; y < (ChunkY + 1) * CHUNK_SIZE; y++)
 			{
-				pTiles[y * Width + x].m_Index = 0;
-				pTiles[y * Width + x].m_Flags = 0;
-				pTiles[y * Width + x].m_Reserved = 0;
-				pTiles[y * Width + x].m_Skip = 0;
+				pTiles[y * MAP_WIDTH + x].m_Index = 0;
+				pTiles[y * MAP_WIDTH + x].m_Flags = 0;
+				pTiles[y * MAP_WIDTH + x].m_Reserved = 0;
+				pTiles[y * MAP_WIDTH + x].m_Skip = 0;
 			}
 		}
 
 		{
-			// noise create unhookable tiles
+			int32_t IntSeed;
+			mem_copy(&IntSeed, &m_MapUuid.m_aData[0], sizeof(IntSeed));
+			const siv::PerlinNoise::seed_type Seed = IntSeed;
+			const siv::PerlinNoise Perlin{Seed};
+			// noise create hookable tiles
 			for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x++)
 			{
 				for(int y = ChunkY * CHUNK_SIZE; y < (ChunkY + 1) * CHUNK_SIZE; y++)
 				{
-					if(x < 1 || x > Width - 1 || y < 1 || y > Height - 1)
+					if(x < 1 || x > MAP_WIDTH - 1 || y < 1 || y > MAP_HEIGHT - 1)
 					{
 						continue;
 					}
@@ -118,7 +118,54 @@ void CMapGen::GenerateGameLayer()
 					finalValue = smoothThreshold(finalValue, ISLAND_THRESHOLD, 0.1f);
 					if(finalValue > DIRT_THRESHOLD)
 					{
-						m_pGameTiles[y * Width + x].m_Index = TILE_SOLID;
+						m_pGameTiles[y * MAP_WIDTH + x].m_Index = TILE_SOLID;
+					}
+				}
+			}
+		}
+		{
+			int32_t IntSeed;
+			mem_copy(&IntSeed, &m_MapUuid.m_aData[12], sizeof(IntSeed));
+			const siv::PerlinNoise::seed_type Seed = IntSeed;
+			const siv::PerlinNoise Perlin{Seed};
+			// noise create hookable tiles
+			for(int x = ChunkX * CHUNK_SIZE; x < (ChunkX + 1) * CHUNK_SIZE; x++)
+			{
+				for(int y = ChunkY * CHUNK_SIZE; y < (ChunkY + 1) * CHUNK_SIZE; y++)
+				{
+					if(x < 1 || x > MAP_WIDTH - 1 || y < 1 || y > MAP_HEIGHT - 1)
+					{
+						continue;
+					}
+					float nx = (x - MAP_WIDTH / 2) / SCALE;
+					float ny = (y - MAP_HEIGHT / 2) / SCALE;
+
+					float noiseValue = Perlin.octave2D(nx, ny, OCTAVES, PERSISTENCE);
+
+					float distFromCenter = sqrt(nx * nx + ny * ny);
+					float noisePerturbation = Perlin.octave2D(nx * 0.5f, ny * 0.5f, OCTAVES, PERSISTENCE) * 1.0f;
+					float perturbedDist = distFromCenter + noisePerturbation;
+					float radialDecay = maximum(0.0f, 1.0f - perturbedDist / 10.0f);
+
+					float edgeSafety = 1.0f;
+
+					int xDistFromEdge = minimum(x, MAP_WIDTH - x);
+					int yDistFromEdge = minimum(y, MAP_HEIGHT - y);
+					int minEdgeDist = minimum(xDistFromEdge, yDistFromEdge);
+
+					if(minEdgeDist < SAFE_MARGIN)
+					{
+						float t = (float) minEdgeDist / SAFE_MARGIN;
+						edgeSafety = 0.5f * (1.0f + tanh(t * 10.0f - 5.0f));
+					}
+
+					float finalValue = noiseValue * radialDecay * edgeSafety;
+
+					finalValue = smoothThreshold(finalValue, ISLAND_THRESHOLD, 0.1f);
+					if(finalValue > STONE_THRESHOLD)
+					{
+						// 255 is a temp character
+						m_pGameTiles[y * MAP_WIDTH + x].m_Index = m_pGameTiles[y * MAP_WIDTH + x].m_Index == TILE_SOLID ? 255 : TILE_NOHOOK;
 					}
 				}
 			}
@@ -143,9 +190,9 @@ void CMapGen::GenerateGameLayer()
 	{
 		for(int y = 1; y < MAP_HEIGHT - 1; y++)
 		{
-			if(m_pGameTiles[y * Width + x].m_Index == TILE_AIR && m_pGameTiles[(y + 1) * Width + x].m_Index == TILE_SOLID && random_int() % 100 < 13)
+			if(m_pGameTiles[y * MAP_WIDTH + x].m_Index == TILE_AIR && m_pGameTiles[(y + 1) * MAP_WIDTH + x].m_Index == TILE_SOLID && random_int() % 100 < 13)
 			{
-				m_pGameTiles[y * Width + x].m_Index = ENTITY_OFFSET + 1 + random_int() % ENTITY_SPAWN_BLUE;
+				m_pGameTiles[y * MAP_WIDTH + x].m_Index = ENTITY_OFFSET + 1 + random_int() % ENTITY_SPAWN_BLUE;
 			}
 		}
 	}
@@ -158,6 +205,9 @@ void CMapGen::GenerateBackground()
 	pGroup->m_ParallaxY = 0;
 
 	SLayerQuads *pLayer = pGroup->AddQuadsLayer("Quads");
+	int32_t IntSeed;
+	mem_copy(&IntSeed, &m_MapUuid.m_aData[8], sizeof(IntSeed));
+	srand(IntSeed);
 	{
 		SQuad *pQuad = pLayer->AddQuad(vec2(0, 0), vec2(1600, 1200));
 		pQuad->m_aColors[0].r = pQuad->m_aColors[1].r = random_int() % 155;
@@ -240,14 +290,7 @@ void CMapGen::GenerateHookable(CMapGen *pParent)
 			pTiles[y * Width + x].m_Flags = 0;
 			pTiles[y * Width + x].m_Reserved = 0;
 			pTiles[y * Width + x].m_Skip = 0;
-			if(pParent->m_pGameTiles[y * Width + x].m_Index == TILE_SOLID)
-			{
-				pTiles[y * Width + x].m_Index = 1;
-			}
-			else
-			{
-				pTiles[y * Width + x].m_Index = 0;
-			}
+			pTiles[y * Width + x].m_Index = pParent->m_pGameTiles[y * Width + x].m_Index == TILE_SOLID || pParent->m_pGameTiles[y * Width + x].m_Index == 255;
 		}
 	}
 
@@ -270,7 +313,7 @@ void CMapGen::GenerateUnhookable(CMapGen *pParent)
 			pTiles[y * Width + x].m_Flags = 0;
 			pTiles[y * Width + x].m_Reserved = 0;
 			pTiles[y * Width + x].m_Skip = 0;
-			pTiles[y * Width + x].m_Index = pParent->m_pGameTiles[y * Width + x].m_Index == TILE_NOHOOK;
+			pTiles[y * Width + x].m_Index = pParent->m_pGameTiles[y * Width + x].m_Index == TILE_NOHOOK || pParent->m_pGameTiles[y * Width + x].m_Index == 255;
 		}
 	}
 
@@ -294,10 +337,12 @@ void CMapGen::GenerateMap(bool CreateCenter)
 		{
 			m_pHookableLayer = m_pMainGroup->AddTileLayer("Hookable");
 			m_pHookableLayer->m_pImage = m_pMapCreater->AddExternalImage("grass_main", 1024, 1024);
+			m_pHookableLayer->m_UseInMinimap = true;
 		}
 		{
 			m_pUnhookableLayer = m_pMainGroup->AddTileLayer("Unhookable");
 			m_pUnhookableLayer->m_pImage = m_pMapCreater->AddExternalImage("generic_unhookable", 1024, 1024);
+			m_pUnhookableLayer->m_UseInMinimap = true;
 		}
 		// Generate hookable tile
 		std::thread(&CMapGen::GenerateHookable, this).join();
@@ -306,6 +351,19 @@ void CMapGen::GenerateMap(bool CreateCenter)
 	}
 
 	while(!m_HookableReady || !m_UnhookableReady) {}
+
+	// fix
+	for(int x = 0; x < MAP_WIDTH; x++)
+	{
+		for(int y = 0; y < MAP_HEIGHT; y++)
+		{
+			if(m_pGameTiles[y * MAP_WIDTH + x].m_Index == 255)
+			{
+				m_pGameTiles[y * MAP_HEIGHT + x].m_Index = TILE_NOHOOK;
+			}
+		}
+	}
+	// m_pMapCreater->AddMiniMap();
 }
 
 bool CMapGen::CreateMap(const char *pFilename, bool CreateCenter)

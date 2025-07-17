@@ -21,6 +21,8 @@
 #include "auto_map.h"
 #include "mapcreater.h"
 
+#define MAP_POS 
+
 void FreePNG(CImageInfo *pImg)
 {
 	free(pImg->m_pData);
@@ -327,6 +329,59 @@ void CMapCreater::AutoMap(SLayerTilemap *pTilemap, const char *pConfigName)
 	AutoMapper.Proceed(pTilemap, ConfigID);
 }
 
+void CMapCreater::AddMiniMap()
+{
+	SGroupInfo *pMiniGroup = AddGroup("Minimap");
+	pMiniGroup->m_ParallaxX = 25;
+	pMiniGroup->m_ParallaxY = 25;
+	const int BlockSize = 32 / 4;
+	vec2 StartPos(-BlockSize / 2, -BlockSize / 2);
+
+	{
+		SGroupInfo *pPointerGroup = AddGroup("Pointer");
+		SLayerQuads *pNewLayer = pPointerGroup->AddQuadsLayer("Pointer");
+		pPointerGroup->m_ParallaxX = 0;
+		pPointerGroup->m_ParallaxY = 0;
+		pNewLayer->m_Flags |= LAYERFLAG_DETAIL;
+		pNewLayer->AddQuad(StartPos, vec2(BlockSize, BlockSize), ColorRGBA{0, 0xff, 0xff, 100});
+	}
+	for(auto &pGroup : m_vpGroups)
+	{
+		if(pGroup == pMiniGroup)
+			continue;
+		for(auto &pLayer : pGroup->m_vpLayers)
+		{
+			if(pLayer->m_Type == ELayerType::TILES && pLayer->m_UseInMinimap)
+			{
+				SLayerQuads *pNewLayer = pMiniGroup->AddQuadsLayer(pLayer->m_aName);
+				pNewLayer->m_Color = ColorRGBA{0, 255, 255, 55};
+				pNewLayer->m_pImage = pLayer->m_pImage;
+				pNewLayer->m_Flags |= LAYERFLAG_DETAIL;
+				
+				int Width, Height;
+				Width = ((SLayerTilemap *) pLayer)->m_Width;
+				Height = ((SLayerTilemap *) pLayer)->m_Height;
+				CTile *pTiles = ((SLayerTilemap *) pLayer)->m_pTiles;
+				for(int x = 0; x < Width; x++)
+				{
+					for(int y = 0; y < Height; y++)
+					{
+						int Index = pTiles[y * Width + x].m_Index;
+						if(Index)
+						{
+							SQuad *pQuad = pNewLayer->AddQuad(StartPos + vec2(x, y) * BlockSize + vec2(BlockSize, BlockSize) / 2, vec2(BlockSize, BlockSize), pNewLayer->m_Color);
+							pQuad->m_aTexcoords[0].u = pQuad->m_aTexcoords[2].u = (Index % 16) * 64;
+							pQuad->m_aTexcoords[1].u = pQuad->m_aTexcoords[3].u = (Index % 16 + 1) * 64;
+							pQuad->m_aTexcoords[0].v = pQuad->m_aTexcoords[1].v = (Index / 16) * 64;
+							pQuad->m_aTexcoords[2].v = pQuad->m_aTexcoords[3].v = (Index / 16 + 1) * 64;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 static std::mutex s_LayerMutex;
 SLayerTilemap *SGroupInfo::AddTileLayer(const char *pName)
 {
@@ -417,10 +472,10 @@ SQuad *SLayerQuads::AddQuad(vec2 Pos, vec2 Size, ColorRGBA Color)
 		pQuad->m_aColors[i] = Color;
 	}
 
-	pQuad->m_aTexcoords[0].x = pQuad->m_aTexcoords[2].x = 0;
-	pQuad->m_aTexcoords[1].x = pQuad->m_aTexcoords[3].x = 1024;
-	pQuad->m_aTexcoords[0].y = pQuad->m_aTexcoords[1].y = 0;
-	pQuad->m_aTexcoords[2].y = pQuad->m_aTexcoords[3].y = 1024;
+	pQuad->m_aTexcoords[0].u = pQuad->m_aTexcoords[2].u = 0;
+	pQuad->m_aTexcoords[1].u = pQuad->m_aTexcoords[3].u = 1024;
+	pQuad->m_aTexcoords[0].v = pQuad->m_aTexcoords[1].v = 0;
+	pQuad->m_aTexcoords[2].v = pQuad->m_aTexcoords[3].v = 1024;
 
 	return pQuad;
 }

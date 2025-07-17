@@ -29,7 +29,7 @@ bool COldTee::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, int W
 		int ClientID = ((CCharacter *) pFrom)->GetPlayer()->GetCID();
 		GameServer()->BotManager()->SendChat(ClientID, "Where do you want to go?", GetBotID());
 		GameServer()->BotManager()->SendChat(ClientID, "If you have decided, just tell me.", GetBotID());
-		GameServer()->BotManager()->SendChat(ClientID, "For example: March23840.", GetBotID());
+		GameServer()->BotManager()->SendChat(ClientID, "For example: /goto FlowerFell-Sans.", GetBotID());
 	}
 	return false;
 }
@@ -43,7 +43,18 @@ void COldTee::Snap(int SnappingClient)
 {
 	int ClientID = GameServer()->BotManager()->FindClientID(SnappingClient, GetBotID());
 	if(ClientID == -1)
+	{
+		if(NetworkClipped(SnappingClient))
+			return;
+		CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
+		if(!pP)
+			return;
+
+		pP->m_X = round_to_int(m_Pos.x);
+		pP->m_Y = round_to_int(m_Pos.y);
+		pP->m_Type = PICKUP_HAMMER;
 		return;
+	}
 
 	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, ClientID, sizeof(CNetObj_PlayerInfo)));
 	if(!pPlayerInfo)
@@ -105,9 +116,9 @@ bool COldTee::TriggerGo(int ClientID, const char *pGoTo)
 {
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "You wanna go to '%s'?", pGoTo);
-	GameServer()->BotManager()->SendChat(-1, aBuf, GetBotID());
-	GameServer()->BotManager()->SendChat(-1, "It's quite a good place.", GetBotID());
-	GameServer()->BotManager()->SendChat(-1, "Don't move in 3s if you are sure that is you want to go!", GetBotID());
+	GameServer()->BotManager()->SendChat(ClientID, aBuf, GetBotID());
+	GameServer()->BotManager()->SendChat(ClientID, "It's quite a good place.", GetBotID());
+	GameServer()->BotManager()->SendChat(ClientID, "Don't move in 3s if you are sure that is you want to go!", GetBotID());
 	GameServer()->m_apPlayers[ClientID]->TeleTo(pGoTo);
 	return true;
 }

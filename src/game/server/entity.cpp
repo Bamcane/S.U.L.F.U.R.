@@ -34,7 +34,7 @@ int CEntity::NetworkClipped(int SnappingClient)
 
 int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos)
 {
-	return ::NetworkClipped(SnappingClient, CheckPos, GameServer());
+	return ::NetworkClipped(SnappingClient, CheckPos, GameServer(), GameWorld());
 }
 
 bool CEntity::GameLayerClipped(vec2 CheckPos)

@@ -108,6 +108,7 @@ public:
 	bool IsSurvival() const { return false; }
 
 	bool OnPlayerChat(int ClientID, const char *pMessage);
+	void OnPlayerTeleport(int ClientID, const char *pString);
 
 	const char *GetGameType() const { return m_pGameType; }
 
