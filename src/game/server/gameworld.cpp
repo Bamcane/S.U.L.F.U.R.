@@ -6,20 +6,25 @@
 #include "gamecontext.h"
 #include "gamecontroller.h"
 #include "gameworld.h"
+#include "player.h"
 
 //////////////////////////////////////////////////
 // game world
 //////////////////////////////////////////////////
 CGameWorld::CGameWorld()
 {
-	m_pGameServer = 0x0;
-	m_pConfig = 0x0;
-	m_pServer = 0x0;
+	m_pGameServer = nullptr;
+	m_pConfig = nullptr;
+	m_pServer = nullptr;
+
+	m_aNumSpawnPoints[0] = 0;
+	m_aNumSpawnPoints[1] = 0;
+	m_aNumSpawnPoints[2] = 0;
 
 	m_Paused = false;
 	m_ResetRequested = false;
 	for(int i = 0; i < NUM_ENTTYPES; i++)
-		m_apFirstEntityTypes[i] = 0;
+		m_apFirstEntityTypes[i] = nullptr;
 }
 
 CGameWorld::~CGameWorld()
@@ -57,6 +62,27 @@ int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, 
 			Num++;
 			if(Num == Max)
 				break;
+		}
+	}
+
+	return Num;
+}
+
+int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, EEntityFlag Flag)
+{
+	int Num = 0;
+	for(int i = 0; i < NUM_ENTTYPES; i++)
+	{
+		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; pEnt = pEnt->TypeNext())
+		{
+			if((pEnt->GetObjFlag() & Flag) && distance(pEnt->m_Pos, Pos) < Radius + pEnt->m_ProximityRadius)
+			{
+				if(ppEnts)
+					ppEnts[Num] = pEnt;
+				Num++;
+				if(Num == Max)
+					break;
+			}
 		}
 	}
 
@@ -167,8 +193,7 @@ void CGameWorld::Tick()
 	if(m_ResetRequested)
 		Reset();
 
-	/*
-	if(m_Paused || GameServer()->GameController()->IsGamePaused())
+	if(m_Paused)
 	{
 		// update all objects
 		for(int i = 0; i < NUM_ENTTYPES; i++)
@@ -180,7 +205,6 @@ void CGameWorld::Tick()
 			}
 	}
 	else
-	*/
 	{
 		// update all objects
 		for(int i = 0; i < NUM_ENTTYPES; i++)
@@ -203,15 +227,33 @@ void CGameWorld::Tick()
 	RemoveEntities();
 }
 
+int64 CGameWorld::CmaskAllInWorld()
+{
+	int64 Mask = 0LL;
+	for(auto& pPlayer : GameServer()->m_apPlayers)
+	{
+		if(pPlayer && pPlayer->GameWorld() == this)
+		{
+			Mask |= CmaskOne(pPlayer->GetCID());
+		}
+	}
+	return Mask;
+}
+
+int64 CGameWorld::CmaskAllInWorldExceptOne(int ClientID)
+{
+	return CmaskAllInWorld() ^ CmaskOne(ClientID);
+}
+
 // TODO: should be more general
-CCharacter *CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, CEntity *pNotThis)
+CEntity *CGameWorld::IntersectEntity(vec2 Pos0, vec2 Pos1, float Radius, int Type, vec2 &NewPos, CEntity *pNotThis)
 {
 	// Find other players
 	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
-	CCharacter *pClosest = 0;
+	CEntity *pClosest = 0;
 
-	CCharacter *p = (CCharacter *) FindFirst(ENTTYPE_CHARACTER);
-	for(; p; p = (CCharacter *) p->TypeNext())
+	CEntity *p = (CEntity *) FindFirst(Type);
+	for(; p; p = (CEntity *) p->TypeNext())
 	{
 		if(p == pNotThis)
 			continue;
@@ -226,6 +268,37 @@ CCharacter *CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, v
 				NewPos = IntersectPos;
 				ClosestLen = Len;
 				pClosest = p;
+			}
+		}
+	}
+
+	return pClosest;
+}
+
+CEntity *CGameWorld::IntersectEntity(vec2 Pos0, vec2 Pos1, float Radius, EEntityFlag Flag, vec2 &NewPos, CEntity *pNotThis)
+{
+	// Find other players
+	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
+	CEntity *pClosest = 0;
+
+	for(int i = 0; i < NUM_ENTTYPES; i++)
+	{
+		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; pEnt = pEnt->TypeNext())
+		{
+			if(!(pEnt->GetObjFlag() & Flag) || pEnt == pNotThis)
+				continue;
+
+			vec2 IntersectPos = closest_point_on_line(Pos0, Pos1, pEnt->m_Pos);
+			float Len = distance(pEnt->m_Pos, IntersectPos);
+			if(Len < pEnt->m_ProximityRadius + Radius)
+			{
+				Len = distance(Pos0, IntersectPos);
+				if(Len < ClosestLen)
+				{
+					NewPos = IntersectPos;
+					ClosestLen = Len;
+					pClosest = pEnt;
+				}
 			}
 		}
 	}
@@ -252,6 +325,34 @@ CEntity *CGameWorld::ClosestEntity(vec2 Pos, float Radius, int Type, CEntity *pN
 			{
 				ClosestRange = Len;
 				pClosest = p;
+			}
+		}
+	}
+
+	return pClosest;
+}
+
+CEntity *CGameWorld::ClosestEntity(vec2 Pos, float Radius, EEntityFlag Flag, CEntity *pNotThis)
+{
+	// Find other players
+	float ClosestRange = Radius * 2;
+	CEntity *pClosest = 0;
+
+	for(int i = 0; i < NUM_ENTTYPES; i++)
+	{
+		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; pEnt = pEnt->TypeNext())
+		{
+			if(!(pEnt->GetObjFlag() & Flag) || pEnt == pNotThis)
+				continue;
+
+			float Len = distance(Pos, pEnt->m_Pos);
+			if(Len < pEnt->m_ProximityRadius + Radius)
+			{
+				if(Len < ClosestRange)
+				{
+					ClosestRange = Len;
+					pClosest = pEnt;
+				}
 			}
 		}
 	}

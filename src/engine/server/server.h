@@ -4,10 +4,13 @@
 #define ENGINE_SERVER_SERVER_H
 
 #include <base/tl/sorted_array.h>
+#include <base/uuid.h>
 
 #include <engine/server.h>
 #include <engine/shared/http.h>
 #include <engine/shared/memheap.h>
+
+#include <unordered_map>
 
 class CSnapIDPool
 {
@@ -137,7 +140,7 @@ public:
 		bool m_NoRconNote;
 		bool m_Quitting;
 		const IConsole::CCommandInfo *m_pRconCmdToSend;
-		int m_MapListEntryToSend;
+		Uuid m_MapID;
 
 		bool IncludedInServerInfo() const
 		{
@@ -172,24 +175,28 @@ public:
 	{
 		MAP_CHUNK_SIZE = NET_MAX_PAYLOAD - NET_MAX_CHUNKHEADERSIZE - 4, // msg type
 	};
-	char m_aCurrentMap[64];
-	SHA256_DIGEST m_CurrentMapSha256;
-	unsigned m_CurrentMapCrc;
-	unsigned char *m_pCurrentMapData;
-	int m_CurrentMapSize;
-	int m_MapChunksPerRequest;
 
-	// maplist
-	struct CMapListEntry
+	class CMapData
 	{
-		char m_aName[IConsole::TEMPMAP_NAME_LENGTH];
+	public:
+		char m_aName[64];
+		SHA256_DIGEST m_Sha256;
+		unsigned m_Crc;
+		unsigned char *m_pData;
+		int m_Size;
 
-		CMapListEntry() {}
-		CMapListEntry(const char *pName) { str_copy(m_aName, pName, sizeof(m_aName)); }
-		bool operator<(const CMapListEntry &Other) const { return str_comp_filenames(m_aName, Other.m_aName) < 0; }
+		CMapData() { Reset(); }
+		void Reset()
+		{
+			m_aName[0] = '\0';
+			m_Crc = 0;
+			m_pData = nullptr;
+			m_Size = 0;
+		}
 	};
-
-	sorted_array<CMapListEntry> m_lMaps;
+	std::unordered_map<Uuid, CMapData> m_uMapDatas;
+	Uuid m_BaseMapUuid;
+	int m_MapChunksPerRequest;
 
 	int m_RconPasswordSet;
 	int m_GeneratedRconPassword;
@@ -225,6 +232,7 @@ public:
 	const char *ClientClan(int ClientID) const;
 	int ClientCountry(int ClientID) const;
 	bool ClientIngame(int ClientID) const;
+	Uuid GetClientMapID(int ClientID) const override;
 
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID);
 
@@ -241,9 +249,6 @@ public:
 	void SendRconCmdAdd(const IConsole::CCommandInfo *pCommandInfo, int ClientID);
 	void SendRconCmdRem(const IConsole::CCommandInfo *pCommandInfo, int ClientID);
 	void UpdateClientRconCommands();
-	void SendMapListEntryAdd(const CMapListEntry *pMapListEntry, int ClientID);
-	void SendMapListEntryRem(const CMapListEntry *pMapListEntry, int ClientID);
-	void UpdateClientMapListEntries();
 
 	void ProcessClientPacket(CNetChunk *pPacket);
 
@@ -256,16 +261,12 @@ public:
 
 	void PumpNetwork();
 
-	virtual void ChangeMap(const char *pMap);
 	const char *GetMapName();
-	int LoadMap(const char *pMapName);
+	int LoadMap(const char *pMapName, bool Generated = false);
 
 	void InitInterfaces(IKernel *pKernel);
 	int Run();
 	void Free();
-
-	static int MapListEntryCallback(const char *pFilename, int IsDir, int DirType, void *pUser);
-	void InitMapList();
 
 	static void ConKick(IConsole::IResult *pResult, void *pUser);
 	static void ConStatus(IConsole::IResult *pResult, void *pUser);
@@ -273,16 +274,13 @@ public:
 	static void ConRecord(IConsole::IResult *pResult, void *pUser);
 	static void ConStopRecord(IConsole::IResult *pResult, void *pUser);
 	static void ConMapReload(IConsole::IResult *pResult, void *pUser);
-	static void ConSaveConfig(IConsole::IResult *pResult, void *pUser);
 	static void ConLogout(IConsole::IResult *pResult, void *pUser);
 	static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-	static void ConchainPlayerSlotsUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainMaxclientsUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainMaxclientsperipUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainConsoleOutputLevelUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainRconPasswordSet(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-	static void ConchainMapUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	void RegisterCommands();
 
@@ -290,6 +288,9 @@ public:
 	virtual void SnapFreeID(int ID);
 	virtual void *SnapNewItem(int Type, int ID, int Size);
 	void SnapSetStaticsize(int ItemType, int Size);
+
+	void SwitchClientMap(int ClientID, Uuid MapID) override;
+	void RequestNewWorld(int ClientID, const char *pWorldName) override;
 };
 
 #endif

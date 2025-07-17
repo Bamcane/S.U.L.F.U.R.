@@ -5,7 +5,7 @@
 
 #include <game/server/entity.h>
 
-class CLaser : public CEntity
+class CLaser : public CBaseOwnerEntity
 {
 public:
 	CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner);
@@ -16,7 +16,7 @@ public:
 	virtual void Snap(int SnappingClient);
 
 protected:
-	bool HitCharacter(vec2 From, vec2 To);
+	bool Hit(vec2 From, vec2 To);
 	void DoBounce();
 
 private:
@@ -25,7 +25,6 @@ private:
 	float m_Energy;
 	int m_Bounces;
 	int m_EvalTick;
-	int m_Owner;
 };
 
 #endif

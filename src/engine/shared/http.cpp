@@ -38,7 +38,7 @@ int CurlDebug(CURL *pHandle, curl_infotype Type, char *pData, size_t DataSize, v
 	default:
 		return 0;
 	}
-	while(const char *pLineEnd = (const char *)memchr(pData, '\n', DataSize))
+	while(const char *pLineEnd = (const char *) memchr(pData, '\n', DataSize))
 	{
 		int LineLength = pLineEnd - pData;
 		dbg_msg("curl", "%c %.*s", TypeChar, LineLength, pData);
@@ -73,7 +73,7 @@ CHttpRequest::~CHttpRequest()
 {
 	dbg_assert(m_File == nullptr, "HTTP request file was not closed");
 	free(m_pBuffer);
-	curl_slist_free_all((curl_slist *)m_pHeaders);
+	curl_slist_free_all((curl_slist *) m_pHeaders);
 	free(m_pBody);
 	if(m_State == EHttpState::DONE && m_ValidateBeforeOverwrite)
 	{
@@ -148,7 +148,7 @@ bool CHttpRequest::BeforeInit()
 
 bool CHttpRequest::ConfigureHandle(void *pHandle)
 {
-	CURL *pH = (CURL *)pHandle;
+	CURL *pH = (CURL *) pHandle;
 	if(!BeforeInit())
 	{
 		return false;
@@ -173,11 +173,11 @@ bool CHttpRequest::ConfigureHandle(void *pHandle)
 	curl_easy_setopt(pH, CURLOPT_LOW_SPEED_TIME, m_Timeout.LowSpeedTime);
 	if(m_MaxResponseSize >= 0)
 	{
-		curl_easy_setopt(pH, CURLOPT_MAXFILESIZE_LARGE, (curl_off_t)m_MaxResponseSize);
+		curl_easy_setopt(pH, CURLOPT_MAXFILESIZE_LARGE, (curl_off_t) m_MaxResponseSize);
 	}
 	if(m_IfModifiedSince >= 0)
 	{
-		curl_easy_setopt(pH, CURLOPT_TIMEVALUE_LARGE, (curl_off_t)m_IfModifiedSince);
+		curl_easy_setopt(pH, CURLOPT_TIMEVALUE_LARGE, (curl_off_t) m_IfModifiedSince);
 		curl_easy_setopt(pH, CURLOPT_TIMECONDITION, CURL_TIMECOND_IFMODSINCE);
 	}
 
@@ -199,7 +199,7 @@ bool CHttpRequest::ConfigureHandle(void *pHandle)
 	}
 	curl_easy_setopt(pH, CURLOPT_URL, m_aUrl);
 	curl_easy_setopt(pH, CURLOPT_NOSIGNAL, 1L);
-	curl_easy_setopt(pH, CURLOPT_USERAGENT, "Teeworlds 0.7.5 " MOD_NAME " " MOD_VERSION" (" CONF_PLATFORM_STRING "; " CONF_ARCH_STRING ")");
+	curl_easy_setopt(pH, CURLOPT_USERAGENT, "Teeworlds 0.7.5 " MOD_NAME " " MOD_VERSION " (" CONF_PLATFORM_STRING "; " CONF_ARCH_STRING ")");
 	curl_easy_setopt(pH, CURLOPT_ACCEPT_ENCODING, ""); // Use any compression algorithm supported by libcurl.
 
 	curl_easy_setopt(pH, CURLOPT_HEADERDATA, this);
@@ -218,7 +218,8 @@ bool CHttpRequest::ConfigureHandle(void *pHandle)
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
-	curl_easy_setopt(pH, CURLOPT_IPRESOLVE, m_IpResolve == IPRESOLVE::V4 ? CURL_IPRESOLVE_V4 : m_IpResolve == IPRESOLVE::V6 ? CURL_IPRESOLVE_V6 : CURL_IPRESOLVE_WHATEVER);
+	curl_easy_setopt(pH, CURLOPT_IPRESOLVE, m_IpResolve == IPRESOLVE::V4 ? CURL_IPRESOLVE_V4 : m_IpResolve == IPRESOLVE::V6 ? CURL_IPRESOLVE_V6 :
+																  CURL_IPRESOLVE_WHATEVER);
 	if(Config()->m_Bindaddr[0] != '\0')
 	{
 		curl_easy_setopt(pH, CURLOPT_INTERFACE, Config()->m_Bindaddr);
@@ -312,7 +313,7 @@ size_t CHttpRequest::OnData(char *pData, size_t DataSize)
 {
 	// Need to check for the maximum response size here as curl can only
 	// guarantee it if the server sets a Content-Length header.
-	if(m_MaxResponseSize >= 0 && m_ResponseLength + DataSize > (uint64_t)m_MaxResponseSize)
+	if(m_MaxResponseSize >= 0 && m_ResponseLength + DataSize > (uint64_t) m_MaxResponseSize)
 	{
 		return 0;
 	}
@@ -328,14 +329,14 @@ size_t CHttpRequest::OnData(char *pData, size_t DataSize)
 
 	if(m_WriteToMemory)
 	{
-		size_t NewBufferSize = maximum((size_t)1024, m_BufferSize);
+		size_t NewBufferSize = maximum((size_t) 1024, m_BufferSize);
 		while(m_ResponseLength + DataSize > NewBufferSize)
 		{
 			NewBufferSize *= 2;
 		}
 		if(NewBufferSize != m_BufferSize)
 		{
-			m_pBuffer = (unsigned char *)realloc(m_pBuffer, NewBufferSize);
+			m_pBuffer = (unsigned char *) realloc(m_pBuffer, NewBufferSize);
 			m_BufferSize = NewBufferSize;
 		}
 		mem_copy(m_pBuffer + m_ResponseLength, pData, DataSize);
@@ -351,17 +352,17 @@ size_t CHttpRequest::OnData(char *pData, size_t DataSize)
 size_t CHttpRequest::HeaderCallback(char *pData, size_t Size, size_t Number, void *pUser)
 {
 	dbg_assert(Size == 1, "invalid size parameter passed to header callback");
-	return ((CHttpRequest *)pUser)->OnHeader(pData, Number);
+	return ((CHttpRequest *) pUser)->OnHeader(pData, Number);
 }
 
 size_t CHttpRequest::WriteCallback(char *pData, size_t Size, size_t Number, void *pUser)
 {
-	return ((CHttpRequest *)pUser)->OnData(pData, Size * Number);
+	return ((CHttpRequest *) pUser)->OnData(pData, Size * Number);
 }
 
 int CHttpRequest::ProgressCallback(void *pUser, double DlTotal, double DlCurr, double UlTotal, double UlCurr)
 {
-	CHttpRequest *pTask = (CHttpRequest *)pUser;
+	CHttpRequest *pTask = (CHttpRequest *) pUser;
 	pTask->m_Current.store(DlCurr, std::memory_order_relaxed);
 	pTask->m_Size.store(DlTotal, std::memory_order_relaxed);
 	pTask->m_Progress.store(DlTotal == 0.0 ? 0 : (100 * DlCurr) / DlTotal, std::memory_order_relaxed);
@@ -373,7 +374,7 @@ void CHttpRequest::OnCompletionInternal(void *pHandle, unsigned int Result)
 {
 	if(pHandle)
 	{
-		CURL *pH = (CURL *)pHandle;
+		CURL *pH = (CURL *) pHandle;
 		long StatusCode;
 		curl_easy_getinfo(pH, CURLINFO_RESPONSE_CODE, &StatusCode);
 		m_StatusCode = StatusCode;
@@ -447,7 +448,7 @@ void CHttpRequest::OnCompletionInternal(void *pHandle, unsigned int Result)
 				}
 				if(Success)
 				{
-					m_pBuffer = (unsigned char *)pBuffer;
+					m_pBuffer = (unsigned char *) pBuffer;
 					m_ResponseLength = Length;
 				}
 				else
@@ -529,7 +530,7 @@ void CHttpRequest::WriteToFileAndMemory(IStorage *pStorage, const char *pDest, i
 
 void CHttpRequest::Header(const char *pNameColonValue)
 {
-	m_pHeaders = curl_slist_append((curl_slist *)m_pHeaders, pNameColonValue);
+	m_pHeaders = curl_slist_append((curl_slist *) m_pHeaders, pNameColonValue);
 }
 
 void CHttpRequest::Wait()
@@ -554,7 +555,7 @@ json_value *CHttpRequest::ResultJson() const
 	unsigned char *pResult;
 	size_t ResultLength;
 	Result(&pResult, &ResultLength);
-	return json_parse((char *)pResult, ResultLength);
+	return json_parse((char *) pResult, ResultLength);
 }
 
 const SHA256_DIGEST &CHttpRequest::ResultSha256() const

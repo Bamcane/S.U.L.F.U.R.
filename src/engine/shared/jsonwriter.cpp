@@ -117,7 +117,7 @@ void CJsonWriter::WriteInternalEscaped(const char *pStr)
 		char SimpleEscape = EscapeJsonChar(pStr[i]);
 		// Assuming ASCII/UTF-8, exactly everything below 0x20 is a
 		// control character.
-		bool NeedsEscape = SimpleEscape || (unsigned char)pStr[i] < 0x20;
+		bool NeedsEscape = SimpleEscape || (unsigned char) pStr[i] < 0x20;
 		if(NeedsEscape)
 		{
 			if(i - UnwrittenFrom > 0)
@@ -205,7 +205,7 @@ void CJsonWriter::CompleteDataType()
 
 CJsonFileWriter::CJsonFileWriter(IOHANDLE IO)
 {
-	dbg_assert((bool)IO, "IO handle invalid");
+	dbg_assert((bool) IO, "IO handle invalid");
 	m_IO = IO;
 }
 

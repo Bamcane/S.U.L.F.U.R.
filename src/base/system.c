@@ -2955,7 +2955,7 @@ static int byteval(const char *hex, unsigned char *dst)
 
 int str_hex_decode(void *dst, int dst_size, const char *src)
 {
-	unsigned char *cdst = (unsigned char *)dst;
+	unsigned char *cdst = (unsigned char *) dst;
 	int slen = str_length(src);
 	int len = slen / 2;
 	int i;

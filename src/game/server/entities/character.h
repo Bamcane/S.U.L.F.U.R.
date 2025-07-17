@@ -8,7 +8,7 @@
 #include <game/gamecore.h>
 #include <game/server/entity.h>
 
-class CCharacter : public CEntity
+class CCharacter : public CDamageEntity<CBaseOwnerEntity>
 {
 	MACRO_ALLOC_POOL_ID()
 
@@ -16,20 +16,15 @@ public:
 	// character's size
 	static const int ms_PhysSize = 28;
 
-	enum
-	{
-		MIN_KILLMESSAGE_CLIENTVERSION = 0x0704, // todo 0.8: remove me
-	};
-
 	CCharacter(CGameWorld *pWorld);
 
-	virtual void Reset();
-	virtual void Destroy();
-	virtual void Tick();
-	virtual void TickDefered();
-	virtual void TickPaused();
-	virtual void Snap(int SnappingClient);
-	virtual void PostSnap();
+	void Reset() override;
+	void Destroy() override;
+	void Tick() override;
+	void TickDefered() override;
+	void TickPaused() override;
+	void Snap(int SnappingClient) override;
+	void PostSnap() override;
 
 	bool IsGrounded();
 
@@ -45,31 +40,24 @@ public:
 	void ResetInput();
 	void FireWeapon();
 
-	void Die(int Killer, int Weapon);
-	bool TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weapon);
+	bool IsFriendlyDamage(CEntity *pFrom) override;
+	bool TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, int Weapon) override;
+	void Die(CEntity *pKiller, int Weapon) override;
 
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos);
-	bool Remove();
-
-	bool IncreaseHealth(int Amount);
-	bool IncreaseArmor(int Amount);
 
 	bool GiveWeapon(int Weapon, int Ammo);
 	void GiveNinja();
 
 	void SetEmote(int Emote, int Tick);
 
-	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
 
 private:
 	// player controlling this character
 	class CPlayer *m_pPlayer;
-
-	bool m_Alive;
-
 	// weapon info
-	CEntity *m_apHitObjects[MAX_PLAYERS];
+	CEntity *m_apHitObjects[MAX_CLIENTS];
 	int m_NumObjectsHit;
 
 	struct WeaponStat
@@ -101,10 +89,6 @@ private:
 	// input
 	CNetObj_PlayerInput m_Input;
 	int m_NumInputs;
-	int m_Jumped;
-
-	int m_Health;
-	int m_Armor;
 
 	int m_TriggeredEvents;
 
@@ -124,6 +108,9 @@ private:
 	int m_ReckoningTick; // tick that we are performing dead reckoning From
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
+
+public:
+	void SetPos(vec2 Pos, bool Reset = false);
 };
 
-#endif
+#endif // GAME_SERVER_ENTITIES_CHARACTER_H

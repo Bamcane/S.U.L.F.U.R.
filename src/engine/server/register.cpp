@@ -74,6 +74,7 @@ class CRegister : public IRegister
 			IHttp *m_pHttp;
 
 			void Run() override;
+
 		public:
 			CJob(int Protocol, int ServerPort, int Index, int InfoSerial, std::shared_ptr<CShared> pShared, std::shared_ptr<CHttpRequest> &&pRegister, IHttp *pHttp) :
 				m_Protocol(Protocol),
@@ -259,7 +260,7 @@ void CRegister::ConchainOnConfigChange(IConsole::IResult *pResult, void *pUserDa
 	pfnCallback(pResult, pCallbackUserData);
 	if(pResult->NumArguments())
 	{
-		((CRegister *)pUserData)->OnConfigChange();
+		((CRegister *) pUserData)->OnConfigChange();
 	}
 }
 
@@ -294,7 +295,7 @@ void CRegister::CProtocol::SendRegister()
 	}
 	else
 	{
-		pRegister = HttpPost(m_pParent->m_pConfig->m_SvRegisterUrl, m_pParent->m_pConfig, (unsigned char *)"", 0);
+		pRegister = HttpPost(m_pParent->m_pConfig->m_SvRegisterUrl, m_pParent->m_pConfig, (unsigned char *) "", 0);
 	}
 	pRegister->HeaderString("Address", aAddress);
 	pRegister->HeaderString("Secret", aSecret);
@@ -349,7 +350,7 @@ void CRegister::CProtocol::SendDeleteIfRegistered(bool Shutdown)
 	char aSecret[UUID_MAXSTRSIZE];
 	FormatUuid(m_pParent->m_Secret, aSecret, sizeof(aSecret));
 
-	std::shared_ptr<CHttpRequest> pDelete = HttpPost(m_pParent->m_pConfig->m_SvRegisterUrl, m_pParent->m_pConfig, (const unsigned char *)"", 0);
+	std::shared_ptr<CHttpRequest> pDelete = HttpPost(m_pParent->m_pConfig->m_SvRegisterUrl, m_pParent->m_pConfig, (const unsigned char *) "", 0);
 	pDelete->HeaderString("Action", "delete");
 	pDelete->HeaderString("Address", aAddress);
 	pDelete->HeaderString("Secret", aSecret);
@@ -447,7 +448,7 @@ void CRegister::CProtocol::CJob::Run()
 	int Status;
 	if(StatusFromString(&Status, StatusString))
 	{
-		dbg_msg(ProtocolToSystem(m_Protocol), "invalid status from master: %s", (const char *)StatusString);
+		dbg_msg(ProtocolToSystem(m_Protocol), "invalid status from master: %s", (const char *) StatusString);
 		json_value_free(pJson);
 		return;
 	}
@@ -460,7 +461,7 @@ void CRegister::CProtocol::CJob::Run()
 			dbg_msg(ProtocolToSystem(m_Protocol), "invalid JSON error response from master");
 			return;
 		}
-		dbg_msg(ProtocolToSystem(m_Protocol), "error response from master: %d: %s", m_pRegister->StatusCode(), (const char *)Message);
+		dbg_msg(ProtocolToSystem(m_Protocol), "error response from master: %d: %s", m_pRegister->StatusCode(), (const char *) Message);
 		json_value_free(pJson);
 		return;
 	}
@@ -475,7 +476,7 @@ void CRegister::CProtocol::CJob::Run()
 		if(Status != STATUS_OK || Status != m_pShared->m_LatestResponseStatus)
 		{
 			if(m_pRegister->Config()->m_Debug)
-				dbg_msg(ProtocolToSystem(m_Protocol), "status: %s", (const char *)StatusString);
+				dbg_msg(ProtocolToSystem(m_Protocol), "status: %s", (const char *) StatusString);
 		}
 		if(Status == m_pShared->m_LatestResponseStatus && Status == STATUS_NEEDCHALLENGE)
 		{
@@ -532,8 +533,6 @@ CRegister::CRegister(CConfig *pConfig, IConsole *pConsole, IEngine *pEngine, IHt
 	m_pConsole->Chain("sv_register", ConchainOnConfigChange, this);
 	m_pConsole->Chain("sv_register_extra", ConchainOnConfigChange, this);
 	m_pConsole->Chain("sv_register_url", ConchainOnConfigChange, this);
-	m_pConsole->Chain("sv_sixup", ConchainOnConfigChange, this);
-	m_pConsole->Chain("sv_ipv4only", ConchainOnConfigChange, this);
 }
 
 void CRegister::Update()
@@ -633,7 +632,7 @@ void CRegister::OnConfigChange()
 	char aHeader[128];
 	while((pRegisterExtra = str_next_token(pRegisterExtra, ",", aHeader, sizeof(aHeader))))
 	{
-		if(m_NumExtraHeaders == (int)std::size(m_aaExtraHeaders))
+		if(m_NumExtraHeaders == (int) std::size(m_aaExtraHeaders))
 		{
 			dbg_msg("register", "reached maximum of %d extra headers, dropping '%s' and all further headers", m_NumExtraHeaders, aHeader);
 			break;
@@ -674,7 +673,7 @@ bool CRegister::OnPacket(const CNetChunk *pPacket)
 	{
 		return false;
 	}
-	if(pPacket->m_DataSize >= (int)sizeof(m_aVerifyPacketPrefix) &&
+	if(pPacket->m_DataSize >= (int) sizeof(m_aVerifyPacketPrefix) &&
 		mem_comp(pPacket->m_pData, m_aVerifyPacketPrefix, sizeof(m_aVerifyPacketPrefix)) == 0)
 	{
 		CUnpacker Unpacker;

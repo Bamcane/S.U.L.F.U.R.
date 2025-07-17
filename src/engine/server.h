@@ -5,6 +5,8 @@
 #include "kernel.h"
 #include "message.h"
 
+#include <base/uuid.h>
+
 class IServer : public IInterface
 {
 	MACRO_INTERFACE("server", 0)
@@ -32,6 +34,7 @@ public:
 	virtual int GetClientInfo(int ClientID, CClientInfo *pInfo) const = 0;
 	virtual void GetClientAddr(int ClientID, char *pAddrStr, int Size) const = 0;
 	virtual int GetClientVersion(int ClientID) const = 0;
+	virtual Uuid GetClientMapID(int ClientID) const = 0;
 
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID) = 0;
 
@@ -64,12 +67,14 @@ public:
 	virtual bool IsAuthed(int ClientID) const = 0;
 	virtual bool IsBanned(int ClientID) = 0;
 	virtual void Kick(int ClientID, const char *pReason) = 0;
-	virtual void ChangeMap(const char *pMap) = 0;
 
 	virtual void DemoRecorder_HandleAutoStart() = 0;
 	virtual bool DemoRecorder_IsRecording() = 0;
 
 	virtual void ExpireServerInfo() = 0;
+
+	virtual void SwitchClientMap(int ClientID, Uuid MapID) = 0;
+	virtual void RequestNewWorld(int ClientID, const char *pWorldName) = 0;
 };
 
 class IGameServer : public IInterface
@@ -113,6 +118,11 @@ public:
 	 * @param i The client id.
 	 */
 	virtual void OnUpdatePlayerServerInfo(class CJsonStringWriter *pJSonWriter, int Id) = 0;
+
+	virtual bool CheckWorldExists(Uuid WorldID) = 0;
+	virtual void LoadNewWorld(Uuid WorldID) = 0;
+	virtual void SwitchPlayerWorld(int ClientID, Uuid WorldID) = 0;
+	virtual void TeleportPlayerOutWorld(int ClientID, const char *pWorldName) = 0;
 };
 
 extern IGameServer *CreateGameServer();

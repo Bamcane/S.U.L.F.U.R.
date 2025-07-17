@@ -13,6 +13,7 @@
 #include "eventhandler.h"
 #include "gameworld.h"
 
+#include <unordered_map>
 /*
 	Tick
 		Game Context (CGameContext::tick)
@@ -41,10 +42,10 @@ class CGameContext : public IGameServer
 	class IConsole *m_pConsole;
 	class IStorage *m_pStorage;
 	CLayers m_Layers;
-	CCollision m_Collision;
 	CNetObjHandler m_NetObjHandler;
 	CTuningParams m_Tuning;
 	class CGameController *m_pController;
+	class CBotManager *m_pBotManager;
 
 	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneReset(IConsole::IResult *pResult, void *pUserData);
@@ -73,10 +74,10 @@ public:
 	class CConfig *Config() const { return m_pConfig; }
 	class IConsole *Console() const { return m_pConsole; }
 	class IStorage *Storage() const { return m_pStorage; }
-	CCollision *Collision() { return &m_Collision; }
 	CTuningParams *Tuning() { return &m_Tuning; }
 
 	class CGameController *GameController() const { return m_pController; }
+	class CBotManager *BotManager() const { return m_pBotManager; }
 
 	CGameContext();
 	~CGameContext();
@@ -86,7 +87,7 @@ public:
 	CEventHandler m_Events;
 	class CPlayer *m_apPlayers[MAX_CLIENTS];
 
-	CGameWorld m_World;
+	std::unordered_map<Uuid, CGameWorld *> m_upWorlds;
 	CCommandManager m_CommandManager;
 
 	CCommandManager *CommandManager() { return &m_CommandManager; }
@@ -126,7 +127,7 @@ public:
 
 	// helper functions
 	void CreateDamage(vec2 Pos, int Id, vec2 Source, int HealthAmount, int ArmorAmount, bool Self, int64 Mask = -1LL);
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage, int64 Mask = -1LL);
+	void CreateExplosion(vec2 Pos, CEntity *pFrom, int Weapon, int MaxDamage, int64 Mask = -1LL);
 	void CreateHammerHit(vec2 Pos, int64 Mask = -1LL);
 	void CreatePlayerSpawn(vec2 Pos, int64 Mask = -1LL);
 	void CreateDeath(vec2 Pos, int Who, int64 Mask = -1LL);
@@ -134,6 +135,7 @@ public:
 
 	// ----- send functions -----
 	void SendChat(int ChatterClientID, int Mode, int To, const char *pText);
+	void SendChatTarget(int To, const char *pText);
 	void SendBroadcast(const char *pText, int ClientID);
 	void SendEmoticon(int ClientID, int Emoticon);
 	void SendWeaponPickup(int ClientID, int Weapon);
@@ -191,6 +193,11 @@ public:
 	virtual const char *NetVersionHashReal() const;
 
 	void OnUpdatePlayerServerInfo(class CJsonStringWriter *pJSonWriter, int Id) override;
+
+	bool CheckWorldExists(Uuid WorldID) override;
+	void LoadNewWorld(Uuid WorldID) override;
+	void SwitchPlayerWorld(int ClientID, Uuid WorldID) override;
+	void TeleportPlayerOutWorld(int ClientID, const char *pWorldName) override;
 };
 
 inline int64 CmaskAll() { return -1; }

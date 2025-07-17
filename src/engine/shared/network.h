@@ -238,6 +238,7 @@ public:
 	static TOKEN GenerateToken(const NETADDR *pAddr, int64 Seed);
 
 	TOKEN GetGlobalToken() { return m_GlobalToken; };
+
 private:
 	CNetBase *m_pNetBase;
 

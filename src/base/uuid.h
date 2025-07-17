@@ -31,13 +31,12 @@ void FormatUuid(Uuid Uuid, char *pBuffer, unsigned BufferLength);
 // Returns nonzero on failure.
 int ParseUuid(Uuid *pUuid, const char *pBuffer);
 
-namespace std
+namespace std {
+template<>
+struct hash<Uuid>
 {
-    template<>
-    struct hash<Uuid>
-	{
-        size_t operator()(const Uuid& uuid) const noexcept;
-    };
-}
+	size_t operator()(const Uuid &uuid) const noexcept;
+};
+} // namespace std
 
 #endif // BASE_UUID_H From DDNet

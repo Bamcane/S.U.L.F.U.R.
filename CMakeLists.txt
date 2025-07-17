@@ -63,6 +63,7 @@ if(TARGET_OS STREQUAL "windows")
   set(AUTO_DEPENDENCIES_DEFAULT ON)
 endif()
 
+option(DOWNLOAD_DEPENDENCIES "Download dependencies (only available on Windows)" ${AUTO_DEPENDENCIES_DEFAULT})
 option(DOWNLOAD_GTEST "Download and compile GTest if not found" ${AUTO_DEPENDENCIES_DEFAULT})
 option(PREFER_BUNDLED_LIBS "Prefer bundled libraries over system libraries" ${AUTO_DEPENDENCIES_DEFAULT})
 option(DEV "Don't generate stuff necessary for packaging" OFF)
@@ -85,6 +86,28 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
 )
 
 set(SERVER_EXECUTABLE Sulfur-Server CACHE STRING "Name of the built server executable")
+
+########################################################################
+# Download dependencies
+########################################################################
+
+find_package(Python3)
+if(DOWNLOAD_DEPENDENCIES)
+  if(Python3_EXECUTABLE AND TARGET_OS STREQUAL "windows" AND TARGET_BITS)
+    set(DOWNLOADS)
+    foreach(d freetype sdl)
+      if(NOT EXISTS "${PROJECT_SOURCE_DIR}/other/${d}/${TARGET_OS}/lib${TARGET_BITS}")
+        list(APPEND DOWNLOADS ${d})
+      endif()
+    endforeach()
+    if(DOWNLOADS)
+      message(STATUS "Downloading Freetype and SDL 2")
+      execute_process(COMMAND ${Python3_EXECUTABLE} scripts/download.py ${DOWNLOADS}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+      )
+    endif()
+  endif()
+endif()
 
 ########################################################################
 # Compiler flags
@@ -267,10 +290,11 @@ if(NOT CMAKE_CROSSCOMPILING)
 endif()
 find_package(ZLIB)
 find_package(Crypto)
+find_package(Freetype)
 find_package(Git)
 find_package(GTest)
 find_package(Threads)
-find_package(Python3)
+find_package(PNG)
 find_package(Curl)
 
 
@@ -315,13 +339,21 @@ show_dependency_status("Curl" CURL)
 if(TARGET_OS AND TARGET_OS STREQUAL "mac")
   show_dependency_status("Dmg tools" DMGTOOLS)
 endif()
+show_dependency_status("Freetype" FREETYPE)
 if(TARGET_OS AND TARGET_OS STREQUAL "mac")
   show_dependency_status("Hdiutil" HDIUTIL)
 endif()
 show_dependency_status("OpenSSL Crypto" CRYPTO)
+show_dependency_status("LibPNG" PNG)
 show_dependency_status("Python3" Python3)
 show_dependency_status("Zlib" ZLIB)
 
+if(NOT(FREETYPE_FOUND))
+  message(SEND_ERROR "You must install Freetype to compile Teeworlds")
+endif()
+if(NOT(PNG_FOUND))
+  message(SEND_ERROR "You must install libpng to compile Teeworlds")
+endif()
 if(NOT(CURL_FOUND))
   message(SEND_ERROR "You must install Curl to compile Teeworlds")
 endif()
@@ -433,6 +465,11 @@ endif()
 ########################################################################
 
 set(EXPECTED_DATA
+  automap/generic_unhookable.rules
+  automap/grass_main.rules
+  fonts/DejaVuSans.ttf
+  fonts/SourceHanSans.ttc
+  fonts/index.json
   mapres/bg_cloud1.png
   mapres/bg_cloud2.png
   mapres/bg_cloud3.png
@@ -465,6 +502,7 @@ set(EXPECTED_DATA
   mapres/winter_mountains.png
   mapres/winter_mountains2.png
   mapres/winter_mountains3.png
+  maps/Port.map
 )
 
 set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttc;ttf;txt;wv" datasrc ${EXPECTED_DATA})
@@ -481,7 +519,6 @@ foreach(datafile ${DATA})
 endforeach()
 set(COPY_FILES
   ${FREETYPE_COPY_FILES}
-  ${SDL2_COPY_FILES}
 )
 file(COPY ${COPY_FILES} DESTINATION .)
 
@@ -588,6 +625,21 @@ set_src(ENGINE_INTERFACE GLOB src/engine
   server.h
   storage.h
 )
+set_src(ENGINE_GFX GLOB src/engine/gfx
+  image_loader.cpp
+  image_loader.h
+  image_manipulation.cpp
+  image_manipulation.h
+)
+set_src(ENGINE_MAP GLOB src/engine/map
+  auto_map.cpp
+  auto_map.h
+  mapcreater.cpp
+  mapcreater.h
+  mapgen.cpp
+  mapgen.h
+  mapitems.h
+)
 set_src(ENGINE_SHARED GLOB src/engine/shared
   compression.cpp
   compression.h
@@ -609,6 +661,7 @@ set_src(ENGINE_SHARED GLOB src/engine/shared
   http.h
   huffman.cpp
   huffman.h
+  imageinfo.h
   jobs.cpp
   jobs.h
   jsonparser.cpp
@@ -668,12 +721,14 @@ set(LIBS
   ${CMAKE_THREAD_LIBS_INIT}
   ${ZLIB_LIBRARIES}
   ${CRYPTO_LIBRARIES} 
+  ${PNG_LIBRARIES}
+  ${FREETYPE_LIBRARIES}
   ${CURL_LIBRARIES}
   ${PLATFORM_LIBS}
 )
 
 # Targets
-add_library(engine-shared EXCLUDE_FROM_ALL OBJECT ${ENGINE_INTERFACE} ${ENGINE_SHARED} ${ENGINE_GENERATED_SHARED} ${BASE})
+add_library(engine-shared EXCLUDE_FROM_ALL OBJECT ${ENGINE_INTERFACE} ${ENGINE_GFX} ${ENGINE_MAP} ${ENGINE_SHARED} ${ENGINE_GENERATED_SHARED} ${BASE})
 add_library(game-shared EXCLUDE_FROM_ALL OBJECT ${GAME_SHARED} ${GAME_GENERATED_SHARED})
 list(APPEND TARGETS_OWN engine-shared game-shared)
 
@@ -690,12 +745,18 @@ set_src(ENGINE_SERVER GLOB src/engine/server
 )
 set_src(GAME_SERVER GLOB_RECURSE src/game/server
   alloc.h
+  botmanager.cpp
+  botmanager.h
+  entities/botentity.cpp
+  entities/botentity.h
   entities/character.cpp
   entities/character.h
   entities/flag.cpp
   entities/flag.h
   entities/laser.cpp
   entities/laser.h
+  entities/oldtee.cpp
+  entities/oldtee.h
   entities/pickup.cpp
   entities/pickup.h
   entities/projectile.cpp
@@ -712,6 +773,8 @@ set_src(GAME_SERVER GLOB_RECURSE src/game/server
   gameworld.h
   player.cpp
   player.h
+  teeinfo.cpp
+  teeinfo.h
 )
 set(GAME_GENERATED_SERVER
   src/generated/server_data.cpp
@@ -1102,6 +1165,8 @@ foreach(target ${TARGETS_OWN})
     target_compile_definitions(${target} PRIVATE CONF_OPENSSL)
     target_include_directories(${target} PRIVATE ${CRYPTO_INCLUDE_DIRS})
   endif()
+  target_include_directories(${target} PRIVATE ${FREETYPE_INCLUDE_DIRS})
+  target_include_directories(${target} PRIVATE ${PNG_INCLUDE_DIRS})
 endforeach()
 
 foreach(target ${TARGETS_DEP})

@@ -19,7 +19,7 @@ class CPlayer
 	MACRO_ALLOC_POOL_ID()
 
 public:
-	CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpec = false);
+	CPlayer(CGameWorld *pGameWorld, int ClientID, bool Dummy, bool AsSpec = false);
 	~CPlayer();
 
 	void Init(int CID);
@@ -45,6 +45,7 @@ public:
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
 	vec2 m_ViewPos;
+	vec2 m_LastViewPos;
 
 	// states if the client is chatting, accessing a menu etc.
 	int m_PlayerFlags;
@@ -107,11 +108,18 @@ public:
 		int m_Max;
 	} m_Latency;
 
+	void SwitchWorld(CGameWorld *pWorld);
+	CGameWorld *GameWorld() const { return m_pGameWorld; }
+
+	bool m_SwitchingMap;
+	int m_TeleportTimer;
+	char m_aTeleTo[64];
+	void TeleTo(const char *pTo);
 private:
 	CCharacter *m_pCharacter;
-	CGameContext *m_pGameServer;
+	CGameWorld *m_pGameWorld;
 
-	CGameContext *GameServer() const { return m_pGameServer; }
+	CGameContext *GameServer() const;
 	IServer *Server() const;
 
 	//

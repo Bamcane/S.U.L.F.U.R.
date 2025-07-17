@@ -26,6 +26,8 @@ class array : private ALLOCATOR
 
 public:
 	typedef plain_range<T> range;
+	typedef T *iterator;
+	typedef const T *const_iterator;
 
 	/*
 		Function: array constructor
@@ -303,6 +305,16 @@ public:
 			Returns a range that contains the whole array.
 	*/
 	range all() const { return range(list, list + num_elements); }
+
+	// Range-based for loop support
+	iterator begin() { return list; }
+	iterator end() { return list + num_elements; }
+
+	const_iterator begin() const { return list; }
+	const_iterator end() const { return list + num_elements; }
+
+	const_iterator cbegin() const { return list; }
+	const_iterator cend() const { return list + num_elements; }
 
 protected:
 	void incsize()

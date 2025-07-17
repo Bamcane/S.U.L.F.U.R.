@@ -3,7 +3,6 @@
 #include <base/hash_ctxt.h>
 #include <base/system.h>
 
-
 static const Uuid TEEWORLDS_NAMESPACE = {{// "e05ddaaa-c4e6-4cfb-b642-5d48e80c0029"
 	0xe0, 0x5d, 0xda, 0xaa, 0xc4, 0xe6, 0x4c, 0xfb,
 	0xb6, 0x42, 0x5d, 0x48, 0xe8, 0x0c, 0x00, 0x29}};
@@ -37,7 +36,7 @@ Uuid CalculateUuid(const char *pName)
 	md5_init(&Md5);
 	md5_update(&Md5, TEEWORLDS_NAMESPACE.m_aData, sizeof(TEEWORLDS_NAMESPACE.m_aData));
 	// Without terminating NUL.
-	md5_update(&Md5, (const unsigned char *)pName, str_length(pName));
+	md5_update(&Md5, (const unsigned char *) pName, str_length(pName));
 	MD5_DIGEST Digest = md5_finish(&Md5);
 
 	Uuid Result;
@@ -106,19 +105,19 @@ bool Uuid::operator<(const Uuid &Other) const
 	return mem_comp(this, &Other, sizeof(*this)) < 0;
 }
 
-namespace std
+namespace std {
+size_t hash<Uuid>::operator()(const Uuid &uuid) const noexcept
 {
-	size_t hash<Uuid>::operator()(const Uuid& uuid) const noexcept
+	// FNV-1a
+	constexpr uint64_t fnv_prime = 1099511628211ULL;
+	constexpr uint64_t fnv_offset_basis = 14695981039346656037ULL;
+
+	uint64_t hash = fnv_offset_basis;
+	for(unsigned char byte : uuid.m_aData)
 	{
-		// FNV-1a
-		constexpr uint64_t fnv_prime = 1099511628211ULL;
-		constexpr uint64_t fnv_offset_basis = 14695981039346656037ULL;
-		
-		uint64_t hash = fnv_offset_basis;
-		for (unsigned char byte : uuid.m_aData) {
-			hash ^= byte;
-			hash *= fnv_prime;
-		}
-		return hash;
+		hash ^= byte;
+		hash *= fnv_prime;
 	}
+	return hash;
 }
+} // namespace std

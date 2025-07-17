@@ -39,6 +39,7 @@ private:
 	bool m_MarkedForDestroy;
 
 protected:
+	EEntityFlag m_ObjFlag;
 	/* State */
 
 	/*
@@ -52,7 +53,7 @@ protected:
 
 public:
 	/* Constructor */
-	CEntity(CGameWorld *pGameWorld, int Objtype, vec2 Pos, int ProximityRadius = 0);
+	CEntity(CGameWorld *pGameWorld, int Objtype, vec2 Pos, int ProximityRadius = 0, EEntityFlag ObjFlag = EEntityFlag::ENTFLAG_NONE);
 
 	/* Destructor */
 	virtual ~CEntity();
@@ -69,6 +70,9 @@ public:
 	const vec2 &GetPos() const { return m_Pos; }
 	float GetProximityRadius() const { return m_ProximityRadius; }
 	bool IsMarkedForDestroy() const { return m_MarkedForDestroy; }
+
+	int GetObjType() const { return m_ObjType; }
+	EEntityFlag GetObjFlag() const { return m_ObjFlag; }
 
 	/* Setters */
 	void MarkForDestroy() { m_MarkedForDestroy = true; }
@@ -140,6 +144,83 @@ public:
 	int NetworkClipped(int SnappingClient, vec2 CheckPos);
 
 	bool GameLayerClipped(vec2 CheckPos);
+
+	int64 CmaskAllInWorld() { return GameWorld()->CmaskAllInWorld(); }
+	int64 CmaskAllInWorldExceptOne(int ClientID) { return GameWorld()->CmaskAllInWorldExceptOne(ClientID); }
 };
 
-#endif
+template<class IBaseEntity>
+class COwnerEntity : public IBaseEntity
+{
+	int m_Owner;
+
+protected:
+	void SetOwner(int Owner) { m_Owner = Owner; }
+
+public:
+	COwnerEntity(CGameWorld *pGameWorld, int Objtype, vec2 Pos, int ProximityRadius = 0);
+
+	int GetOwner() const { return m_Owner; }
+};
+
+template<class IBaseEntity>
+class CDamageEntity : public IBaseEntity
+{
+protected:
+	bool m_Alive;
+
+	int m_Health;
+	int m_MaxHealth;
+
+	int m_Armor;
+	int m_MaxArmor;
+
+public:
+	CDamageEntity(CGameWorld *pGameWorld, int Objtype, vec2 Pos, int ProximityRadius = 0);
+
+	virtual ~CDamageEntity();
+
+	virtual void Die(CEntity *pKiller, int Weapon);
+	virtual bool IsFriendlyDamage(CEntity *pFrom);
+	virtual bool TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, int Weapon);
+
+	inline bool IncreaseHealth(int Amount)
+	{
+		if(m_Health >= m_MaxHealth)
+			return false;
+		m_Health = clamp(m_Health + Amount, 0, m_MaxHealth);
+		return true;
+	};
+
+	inline bool IncreaseArmor(int Amount)
+	{
+		if(m_Armor >= m_MaxArmor)
+			return false;
+		m_Armor = clamp(m_Armor + Amount, 0, m_MaxArmor);
+		return true;
+	};
+
+	// Getter
+	int GetHealth() const { return m_Health; }
+	int GetArmor() const { return m_Armor; }
+
+	int GetMaxHealth() const { return m_MaxHealth; }
+	int GetMaxArmor() const { return m_MaxArmor; }
+
+	inline bool IsAlive() { return m_Alive; }
+	// Setter
+	void SetHealth(int Amount) { m_Health = Amount; }
+	void SetArmor(int Amount) { m_Armor = Amount; }
+
+	void SetMaxHealth(int Amount) { m_MaxHealth = Amount; }
+	void SetMaxArmor(int Amount) { m_MaxArmor = Amount; }
+};
+
+extern template class CDamageEntity<CEntity>;
+extern template class COwnerEntity<CEntity>;
+extern template class CDamageEntity<COwnerEntity<CEntity>>;
+
+using CBaseOwnerEntity = COwnerEntity<CEntity>;
+using CBaseDamageEntity = CDamageEntity<CEntity>;
+
+#endif // GAME_SERVER_ENTITY_H

@@ -9,11 +9,13 @@
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
-IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
+CGameContext *CPlayer::GameServer() const { return m_pGameWorld->GameServer(); }
+IServer *CPlayer::Server() const { return m_pGameWorld->Server(); }
 
-CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpec)
+CPlayer::CPlayer(CGameWorld *pGameWorld, int ClientID, bool Dummy, bool AsSpec)
 {
-	m_pGameServer = pGameServer;
+	m_SwitchingMap = false;
+	m_pGameWorld = pGameWorld;
 	m_RespawnTick = Server()->Tick();
 	m_DieTick = Server()->Tick();
 	m_ScoreStartTick = Server()->Tick();
@@ -32,6 +34,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 	m_RespawnDisabled = GameServer()->GameController()->GetStartRespawnState();
 	m_DeadSpecMode = false;
 	m_Spawning = false;
+	m_TeleportTimer = -1;
 	mem_zero(&m_Latency, sizeof(m_Latency));
 }
 
@@ -121,6 +124,24 @@ void CPlayer::PostTick()
 		else if(GameServer()->m_apPlayers[m_SpectatorID])
 			m_ViewPos = GameServer()->m_apPlayers[m_SpectatorID]->m_ViewPos;
 	}
+
+	if(m_TeleportTimer > 0)
+	{
+		m_TeleportTimer--;
+		if(!m_TeleportTimer)
+		{
+			GameServer()->TeleportPlayerOutWorld(m_ClientID, m_aTeleTo);
+			m_TeleportTimer = -1;
+		}
+		// tele cancelled
+		else if(distance(m_LastViewPos, m_ViewPos) > 2.f)
+		{
+			GameServer()->SendChatTarget(m_ClientID, "Teleport request cancelled");
+			m_TeleportTimer = -1;
+		}
+	}
+
+	m_LastViewPos = m_ViewPos;
 }
 
 void CPlayer::Snap(int SnappingClient)
@@ -222,12 +243,6 @@ void CPlayer::OnPredictedInput(CNetObj_PlayerInput *NewInput)
 
 void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
 {
-	if(GameServer()->m_World.m_Paused)
-	{
-		m_PlayerFlags = NewInput->m_PlayerFlags;
-		return;
-	}
-
 	if(NewInput->m_PlayerFlags & PLAYERFLAG_CHATTING)
 	{
 		// skip the input if chat is active
@@ -257,8 +272,8 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
 			m_ActiveSpecSwitch = true;
 			if(m_SpecMode == SPEC_FREEVIEW)
 			{
-				CCharacter *pChar = (CCharacter *) GameServer()->m_World.ClosestEntity(m_ViewPos, 6.0f * 32, CGameWorld::ENTTYPE_CHARACTER, 0);
-				CFlag *pFlag = (CFlag *) GameServer()->m_World.ClosestEntity(m_ViewPos, 6.0f * 32, CGameWorld::ENTTYPE_FLAG, 0);
+				CCharacter *pChar = (CCharacter *) GameWorld()->ClosestEntity(m_ViewPos, 6.0f * 32, CGameWorld::ENTTYPE_CHARACTER, 0);
+				CFlag *pFlag = (CFlag *) GameWorld()->ClosestEntity(m_ViewPos, 6.0f * 32, CGameWorld::ENTTYPE_FLAG, 0);
 				if(pChar || pFlag)
 				{
 					if(!pChar || (pFlag && pChar && distance(m_ViewPos, pFlag->GetPos()) < distance(m_ViewPos, pChar->GetPos())))
@@ -309,7 +324,7 @@ void CPlayer::KillCharacter(int Weapon)
 {
 	if(m_pCharacter)
 	{
-		m_pCharacter->Die(m_ClientID, Weapon);
+		m_pCharacter->Die(m_pCharacter, Weapon);
 		delete m_pCharacter;
 		m_pCharacter = 0;
 	}
@@ -348,7 +363,7 @@ bool CPlayer::SetSpectatorID(int SpecMode, int SpectatorID)
 		{
 			if(SpecMode == SPEC_FLAGRED || SpecMode == SPEC_FLAGBLUE)
 			{
-				CFlag *pFlag = (CFlag *) GameServer()->m_World.FindFirst(CGameWorld::ENTTYPE_FLAG);
+				CFlag *pFlag = (CFlag *) GameWorld()->FindFirst(CGameWorld::ENTTYPE_FLAG);
 				while(pFlag)
 				{
 					if((pFlag->GetTeam() == TEAM_RED && SpecMode == SPEC_FLAGRED) || (pFlag->GetTeam() == TEAM_BLUE && SpecMode == SPEC_FLAGBLUE))
@@ -452,12 +467,29 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 void CPlayer::TryRespawn()
 {
 	vec2 SpawnPos;
+	if(m_Team == TEAM_SPECTATORS)
+		return;
 
-	if(!GameServer()->GameController()->CanSpawn(m_Team, &SpawnPos))
+	if(!GameServer()->GameController()->CanSpawn(GameWorld(), 0, &SpawnPos))
 		return;
 
 	m_Spawning = false;
-	m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);
+	m_pCharacter = new(m_ClientID) CCharacter(GameWorld());
 	m_pCharacter->Spawn(this, SpawnPos);
-	GameServer()->CreatePlayerSpawn(SpawnPos);
+	GameServer()->CreatePlayerSpawn(SpawnPos, GameWorld()->CmaskAllInWorld());
+}
+
+void CPlayer::SwitchWorld(CGameWorld *pWorld)
+{
+	if(m_pCharacter)
+		GameServer()->CreatePlayerSpawn(m_pCharacter->GetPos(), GameWorld()->CmaskAllInWorldExceptOne(m_ClientID));
+	m_pGameWorld = pWorld;
+	KillCharacter();
+	m_SwitchingMap = true;
+}
+
+void CPlayer::TeleTo(const char *pTo)
+{
+	m_TeleportTimer = Server()->TickSpeed() * 3;
+	str_copy(m_aTeleTo, pTo, sizeof(m_aTeleTo));
 }

@@ -42,7 +42,7 @@ void CPickup::Tick()
 			return;
 	}
 	// Check if a player intersected us
-	CCharacter *pChr = (CCharacter *) GameWorld()->ClosestEntity(m_Pos, 20.0f, CGameWorld::ENTTYPE_CHARACTER, 0);
+	CCharacter *pChr = (CCharacter *) (GameWorld()->ClosestEntity(m_Pos, 20.0f, CGameWorld::ENTTYPE_CHARACTER, 0));
 	if(pChr && pChr->IsAlive())
 	{
 		// player picked us up, is someone was hooking us, let them go
@@ -100,8 +100,8 @@ void CPickup::Tick()
 			pChr->GiveNinja();
 
 			// loop through all players, setting their emotes
-			CCharacter *pC = static_cast<CCharacter *>(GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER));
-			for(; pC; pC = (CCharacter *) pC->TypeNext())
+			CCharacter *pC = (CCharacter *) (GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER));
+			for(; pC; pC = (CCharacter *) (pC->TypeNext()))
 			{
 				if(pC != pChr)
 					pC->SetEmote(EMOTE_SURPRISE, Server()->Tick() + Server()->TickSpeed());

@@ -20,16 +20,23 @@ CCollision::CCollision()
 	m_pLayers = 0;
 }
 
+CCollision::~CCollision()
+{
+	if(m_pTiles)
+		delete[] m_pTiles;
+}
+
 void CCollision::Init(class CLayers *pLayers)
 {
 	m_pLayers = pLayers;
 	m_Width = m_pLayers->GameLayer()->m_Width;
 	m_Height = m_pLayers->GameLayer()->m_Height;
-	m_pTiles = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->GameLayer()->m_Data));
+	m_pTiles = new CTile[m_Width * m_Height];
+	CTile *pTiles = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->GameLayer()->m_Data));
 
 	for(int i = 0; i < m_Width * m_Height; i++)
 	{
-		int Index = m_pTiles[i].m_Index;
+		int Index = pTiles[i].m_Index;
 
 		if(Index > 128)
 			continue;

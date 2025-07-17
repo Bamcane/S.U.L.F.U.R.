@@ -17,6 +17,8 @@
 */
 class CGameController
 {
+	friend class CBotManager;
+
 	class CGameContext *m_pGameServer;
 	class CConfig *m_pConfig;
 	class IServer *m_pServer;
@@ -45,14 +47,13 @@ class CGameController
 			m_Pos = vec2(100, 100);
 		}
 
+		class CGameWorld *m_pWorld;
 		vec2 m_Pos;
 		bool m_Got;
 		bool m_RandomSpawn;
 		int m_FriendlyTeam;
 		float m_Score;
 	};
-	vec2 m_aaSpawnPoints[3][64];
-	unsigned m_aNumSpawnPoints[3];
 
 	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos) const;
 	void EvaluateSpawnType(CSpawnEval *pEval, int Type) const;
@@ -83,7 +84,7 @@ public:
 	int OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon);
 	void OnCharacterSpawn(class CCharacter *pChr);
 	void OnFlagReturn(class CFlag *pFlag);
-	bool OnEntity(int Index, vec2 Pos);
+	bool OnEntity(class CGameWorld *pGameWorld, int Index, vec2 Pos);
 
 	void OnPlayerConnect(class CPlayer *pPlayer);
 	void OnPlayerDisconnect(class CPlayer *pPlayer);
@@ -106,10 +107,12 @@ public:
 	bool IsTeamplay() const { return false; }
 	bool IsSurvival() const { return false; }
 
+	bool OnPlayerChat(int ClientID, const char *pMessage);
+
 	const char *GetGameType() const { return m_pGameType; }
 
 	// spawn
-	bool CanSpawn(int Team, vec2 *pPos) const;
+	bool CanSpawn(class CGameWorld *pWorld, int Type, vec2 *pPos) const;
 	bool GetStartRespawnState() const;
 
 	// team

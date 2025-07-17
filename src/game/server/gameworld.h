@@ -4,9 +4,28 @@
 #define GAME_SERVER_GAMEWORLD_H
 
 #include <game/gamecore.h>
+#include <game/collision.h>
+
+#define MAX_CHECK_ENTITY 128
+
+enum class EEntityFlag : int
+{
+	ENTFLAG_NONE = 0,
+	ENTFLAG_OWNER = 1 << 0,
+	ENTFLAG_DAMAGE = 1 << 1,
+};
+
+inline EEntityFlag operator|(const EEntityFlag &A, const EEntityFlag &B)
+{
+	return static_cast<EEntityFlag>(static_cast<int>(A) | static_cast<int>(B));
+}
+
+inline bool operator&(const EEntityFlag &A, const EEntityFlag &B)
+{
+	return static_cast<int>(A) & static_cast<int>(B);
+}
 
 class CEntity;
-class CCharacter;
 
 /*
 	Class: Game World
@@ -23,6 +42,7 @@ public:
 		ENTTYPE_PICKUP,
 		ENTTYPE_CHARACTER,
 		ENTTYPE_FLAG,
+		ENTTYPE_BOTENTITY,
 		NUM_ENTTYPES
 	};
 
@@ -37,10 +57,12 @@ private:
 	class CConfig *m_pConfig;
 	class IServer *m_pServer;
 
+	CCollision m_Collision;
 public:
 	class CGameContext *GameServer() { return m_pGameServer; }
 	class CConfig *Config() { return m_pConfig; }
 	class IServer *Server() { return m_pServer; }
+	CCollision *Collision() { return &m_Collision; }
 
 	bool m_ResetRequested;
 	bool m_Paused;
@@ -48,6 +70,9 @@ public:
 
 	CGameWorld();
 	~CGameWorld();
+
+	vec2 m_aaSpawnPoints[3][128];
+	unsigned m_aNumSpawnPoints[3];
 
 	void SetGameServer(CGameContext *pGameServer);
 
@@ -69,6 +94,7 @@ public:
 			Number of entities found and added to the ents array.
 	*/
 	int FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, int Type);
+	int FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, EEntityFlag Flag);
 
 	/*
 		Function: closest_CEntity
@@ -84,6 +110,7 @@ public:
 			Returns a pointer to the closest CEntity or NULL if no CEntity is close enough.
 	*/
 	CEntity *ClosestEntity(vec2 Pos, float Radius, int Type, CEntity *pNotThis);
+	CEntity *ClosestEntity(vec2 Pos, float Radius, EEntityFlag Flag, CEntity *pNotThis);
 
 	/*
 		Function: interserct_CCharacter
@@ -99,7 +126,8 @@ public:
 		Returns:
 			Returns a pointer to the closest hit or NULL of there is no intersection.
 	*/
-	class CCharacter *IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, class CEntity *pNotThis = 0);
+	CEntity *IntersectEntity(vec2 Pos0, vec2 Pos1, float Radius, int Type, vec2 &NewPos, class CEntity *pNotThis = 0);
+	CEntity *IntersectEntity(vec2 Pos0, vec2 Pos1, float Radius, EEntityFlag Flag, vec2 &NewPos, class CEntity *pNotThis = 0);
 
 	/*
 		Function: insert_entity
@@ -148,6 +176,9 @@ public:
 
 	*/
 	void Tick();
+
+	int64 CmaskAllInWorld();
+	int64 CmaskAllInWorldExceptOne(int ClientID);
 };
 
 #endif

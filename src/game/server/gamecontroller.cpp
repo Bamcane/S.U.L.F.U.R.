@@ -5,6 +5,8 @@
 #include <game/mapitems.h>
 #include <game/version.h>
 
+#include "botmanager.h"
+#include "entities/botentity.h"
 #include "entities/character.h"
 #include "entities/pickup.h"
 #include "gamecontext.h"
@@ -24,11 +26,6 @@ CGameController::CGameController(CGameContext *pGameServer)
 	// info
 	m_GameFlags = 0;
 	m_pGameType = MOD_NAME;
-
-	// spawn
-	m_aNumSpawnPoints[0] = 0;
-	m_aNumSpawnPoints[1] = 0;
-	m_aNumSpawnPoints[2] = 0;
 }
 
 // activity
@@ -133,14 +130,13 @@ void CGameController::OnCharacterSpawn(CCharacter *pChr)
 
 	// give default weapons
 	pChr->GiveWeapon(WEAPON_HAMMER, -1);
-	pChr->GiveWeapon(WEAPON_GUN, 10);
 }
 
 void CGameController::OnFlagReturn(CFlag *pFlag)
 {
 }
 
-bool CGameController::OnEntity(int Index, vec2 Pos)
+bool CGameController::OnEntity(CGameWorld *pGameWorld, int Index, vec2 Pos)
 {
 	// don't add pickups in survival
 	if(m_GameFlags & GAMEFLAG_SURVIVAL)
@@ -153,14 +149,14 @@ bool CGameController::OnEntity(int Index, vec2 Pos)
 
 	switch(Index)
 	{
-	case ENTITY_SPAWN:
-		m_aaSpawnPoints[0][m_aNumSpawnPoints[0]++] = Pos;
+	case ENTITY_SPAWN: // Player
+		pGameWorld->m_aaSpawnPoints[0][pGameWorld->m_aNumSpawnPoints[0]++] = Pos;
 		break;
-	case ENTITY_SPAWN_RED:
-		m_aaSpawnPoints[1][m_aNumSpawnPoints[1]++] = Pos;
+	case ENTITY_SPAWN_RED: // NPC1
+		pGameWorld->m_aaSpawnPoints[1][pGameWorld->m_aNumSpawnPoints[1]++] = Pos;
 		break;
 	case ENTITY_SPAWN_BLUE:
-		m_aaSpawnPoints[2][m_aNumSpawnPoints[2]++] = Pos;
+		pGameWorld->m_aaSpawnPoints[2][pGameWorld->m_aNumSpawnPoints[2]++] = Pos;
 		break;
 	case ENTITY_ARMOR_1:
 		Type = PICKUP_ARMOR;
@@ -184,7 +180,7 @@ bool CGameController::OnEntity(int Index, vec2 Pos)
 
 	if(Type != -1)
 	{
-		new CPickup(&GameServer()->m_World, Type, Pos);
+		new CPickup(pGameWorld, Type, Pos);
 		return true;
 	}
 
@@ -254,9 +250,6 @@ void CGameController::OnReset()
 // game
 void CGameController::ResetGame()
 {
-	// reset the game
-	GameServer()->m_World.m_ResetRequested = true;
-
 	m_GameStartTick = Server()->Tick();
 }
 
@@ -290,6 +283,27 @@ void CGameController::Tick()
 {
 	// check for inactive players
 	DoActivityCheck();
+
+	GameServer()->BotManager()->Tick();
+	// do special loop
+	for(auto& pPlayer : GameServer()->m_apPlayers)
+	{
+		if(!pPlayer) continue;
+		if(!pPlayer->GetCharacter()) continue;
+		CCharacter *pChr = pPlayer->GetCharacter();
+		if(pChr->GetPos().x < -480.f)
+		{
+			float x = -pChr->GetPos().x + pChr->GameWorld()->Collision()->GetWidth() * 32.f;
+			float y = pChr->GetPos().y;
+			pChr->SetPos(vec2(x, y));
+		}
+		else if(pChr->GetPos().x > pChr->GameWorld()->Collision()->GetWidth() * 32.f + 480.f)
+		{
+			float x = -(pChr->GetPos().x - pChr->GameWorld()->Collision()->GetWidth() * 32.f);
+			float y = pChr->GetPos().y;
+			pChr->SetPos(vec2(x, y));
+		}
+	}
 }
 
 // info
@@ -322,7 +336,17 @@ bool CGameController::IsPlayerReadyMode() const
 
 bool CGameController::IsTeamChangeAllowed() const
 {
-	return !GameServer()->m_World.m_Paused;
+	return true;
+}
+
+bool CGameController::OnPlayerChat(int ClientID, const char *pMessage)
+{
+	for(auto& [BotID, pBot] : GameServer()->BotManager()->m_vpBots)
+	{
+		if(pBot->TriggerGo(ClientID, pMessage))
+			return false;
+	}
+	return true;
 }
 
 void CGameController::SendGameInfo(int ClientID)
@@ -356,24 +380,15 @@ void CGameController::SendGameInfo(int ClientID)
 }
 
 // spawn
-bool CGameController::CanSpawn(int Team, vec2 *pOutPos) const
+bool CGameController::CanSpawn(class CGameWorld *pWorld, int Type, vec2 *pOutPos) const
 {
-	// spectators can't spawn
-	if(Team == TEAM_SPECTATORS || GameServer()->m_World.m_Paused || GameServer()->m_World.m_ResetRequested)
-		return false;
-
 	CSpawnEval Eval;
 	Eval.m_RandomSpawn = true;
-	Eval.m_FriendlyTeam = Team;
+	Eval.m_FriendlyTeam = 0;
+	Eval.m_pWorld = pWorld;
 
 	// first try own team spawn, then normal spawn and then enemy
-	EvaluateSpawnType(&Eval, 1 + (Team & 1));
-	if(!Eval.m_Got)
-	{
-		EvaluateSpawnType(&Eval, 0);
-		if(!Eval.m_Got)
-			EvaluateSpawnType(&Eval, 1 + ((Team + 1) & 1));
-	}
+	EvaluateSpawnType(&Eval, Type);
 
 	*pOutPos = Eval.m_Pos;
 	return Eval.m_Got;
@@ -382,7 +397,7 @@ bool CGameController::CanSpawn(int Team, vec2 *pOutPos) const
 float CGameController::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos) const
 {
 	float Score = 0.0f;
-	CCharacter *pC = (CCharacter *) GameServer()->m_World.FindFirst(CGameWorld::ENTTYPE_CHARACTER);
+	CCharacter *pC = (CCharacter *) pEval->m_pWorld->FindFirst(CGameWorld::ENTTYPE_CHARACTER);
 	for(; pC; pC = (CCharacter *) pC->TypeNext())
 	{
 		// team mates are not as dangerous as enemies
@@ -400,19 +415,19 @@ float CGameController::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos) const
 void CGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type) const
 {
 	// get spawn point
-	for(unsigned i = 0; i < m_aNumSpawnPoints[Type]; i++)
+	for(unsigned i = 0; i < pEval->m_pWorld->m_aNumSpawnPoints[Type]; i++)
 	{
 		// check if the position is occupado
 		CCharacter *apEnts[MAX_CLIENTS];
-		int Num = GameServer()->m_World.FindEntities(m_aaSpawnPoints[Type][i], 64, (CEntity **) apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+		int Num = pEval->m_pWorld->FindEntities(pEval->m_pWorld->m_aaSpawnPoints[Type][i], 64, (CEntity **) apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 		vec2 Positions[5] = {vec2(0.0f, 0.0f), vec2(-32.0f, 0.0f), vec2(0.0f, -32.0f), vec2(32.0f, 0.0f), vec2(0.0f, 32.0f)}; // start, left, up, right, down
 		int Result = -1;
 		for(int Index = 0; Index < 5 && Result == -1; ++Index)
 		{
 			Result = Index;
 			for(int c = 0; c < Num; ++c)
-				if(GameServer()->Collision()->CheckPoint(m_aaSpawnPoints[Type][i] + Positions[Index]) ||
-					distance(apEnts[c]->GetPos(), m_aaSpawnPoints[Type][i] + Positions[Index]) <= apEnts[c]->GetProximityRadius())
+				if(pEval->m_pWorld->Collision()->CheckPoint(pEval->m_pWorld->m_aaSpawnPoints[Type][i] + Positions[Index]) ||
+					distance(apEnts[c]->GetPos(), pEval->m_pWorld->m_aaSpawnPoints[Type][i] + Positions[Index]) <= apEnts[c]->GetProximityRadius())
 				{
 					Result = -1;
 					break;
@@ -421,7 +436,7 @@ void CGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type) const
 		if(Result == -1)
 			continue; // try next spawn point
 
-		vec2 P = m_aaSpawnPoints[Type][i] + Positions[Result];
+		vec2 P = pEval->m_pWorld->m_aaSpawnPoints[Type][i] + Positions[Result];
 		float S = pEval->m_RandomSpawn ? (Result + random_float()) : EvaluateSpawnPos(pEval, P);
 		if(!pEval->m_Got || pEval->m_Score > S)
 		{
