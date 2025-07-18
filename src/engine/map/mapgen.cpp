@@ -363,7 +363,7 @@ void CMapGen::GenerateMap(bool CreateCenter)
 			}
 		}
 	}
-	// m_pMapCreater->AddMiniMap();
+	m_pMapCreater->AddMiniMap();
 }
 
 bool CMapGen::CreateMap(const char *pFilename, bool CreateCenter)

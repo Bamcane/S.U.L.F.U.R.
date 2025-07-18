@@ -125,6 +125,7 @@ public:
 	int GetRealPlayerNum() const { return m_RealPlayerNum; }
 	int GetStartTeam();
 
+	bool IsInDarkMode() const;
 	// static void Com_Example(IConsole::IResult *pResult, void *pContext);
 	void RegisterChatCommands(CCommandManager *pManager);
 };

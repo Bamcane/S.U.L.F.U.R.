@@ -14,9 +14,15 @@ public:
 	void Snap(int SnappingClient) override;
 	bool TriggerGo(int ClientID, const char *pGoTo) override;
 
+	void TriggerDarkMode() override;
+	void TriggerDarkModeOver() override;
 protected:
 	void Action() override;
 	int m_RandomEmoteTimer;
+
+	bool m_DarkMode;
+	STeeInfo m_LightInfo;
+	STeeInfo m_DarkInfo;
 };
 
 #endif // GAME_SERVER_ENTITIES_OLDTEE_H

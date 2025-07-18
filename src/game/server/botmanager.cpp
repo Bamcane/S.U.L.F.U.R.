@@ -311,6 +311,50 @@ void CBotManager::OnClientRefresh(int ClientID)
 	ClearPlayerMap(ClientID);
 }
 
+void CBotManager::RequestRefreshMap(Uuid BotID)
+{
+	if(!m_vpBots.count(BotID))
+		return;
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		for(int j = 0; j < MAX_BOTS; j++)
+		{
+			if(m_aaBotIDMaps[i][j] == BotID)
+			{
+				CNetMsg_Sv_ClientDrop DropInfo;
+				DropInfo.m_ClientID = j + MAX_CLIENTS;
+				DropInfo.m_pReason = "";
+				DropInfo.m_Silent = true;
+
+				Server()->SendPackMsg(&DropInfo, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
+
+				CBotEntity *pBot = m_vpBots[BotID];
+
+				CNetMsg_Sv_ClientInfo NewInfo;
+				NewInfo.m_ClientID = j + MAX_CLIENTS;
+				NewInfo.m_Local = 0;
+				// do not show bot
+				NewInfo.m_Team = TEAM_BLUE;
+
+				NewInfo.m_pName = pBot->GetName();
+				NewInfo.m_pClan = "";
+				NewInfo.m_Country = -1;
+				NewInfo.m_Silent = true;
+
+				for(int p = 0; p < NUM_SKINPARTS; p++)
+				{
+					NewInfo.m_apSkinPartNames[p] = pBot->GetTeeInfos()->m_aaSkinPartNames[p];
+					NewInfo.m_aUseCustomColors[p] = pBot->GetTeeInfos()->m_aUseCustomColors[p];
+					NewInfo.m_aSkinPartColors[p] = pBot->GetTeeInfos()->m_aSkinPartColors[p];
+				}
+
+				Server()->SendPackMsg(&NewInfo, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
+					break;
+			}
+		}
+	}
+}
+
 void CBotManager::PostSnap()
 {
 	if(m_vMarkedAsDestroy.size())

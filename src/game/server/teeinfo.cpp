@@ -1,8 +1,16 @@
 #include <base/math.h>
 
+#include <engine/console.h>
+#include <engine/shared/jsonparser.h>
+
 #include "teeinfo.h"
 
 #include <array>
+
+enum
+{
+	NUM_COLOR_COMPONENTS = 4,
+};
 
 static STeeInfo g_aStdSkins[] = {
 	{{"standard", "", "", "standard", "standard", "standard"}, {true, false, false, true, true, false}, {1798004, 0, 0, 1799582, 1869630, 0}},
@@ -21,6 +29,71 @@ static STeeInfo g_aStdSkins[] = {
 	{{"standard", "duodonny", "twinbopp", "standard", "standard", "standard"}, {true, true, true, true, true, false}, {15310519, -1600806, 15310519, 15310519, 37600, 0}},
 	{{"standard", "twintri", "", "standard", "standard", "standard"}, {true, true, false, true, true, false}, {3447932, -14098717, 0, 185, 9634888, 0}},
 	{{"standard", "warpaint", "", "standard", "standard", "standard"}, {true, false, false, true, true, false}, {1944919, 0, 0, 750337, 1944919, 0}}};
+
+static const char * const s_apSkinPartNames[NUM_SKINPARTS] = {"body", "marking", "decoration", "hands", "feet", "eyes"}; 
+static const char * const s_apColorComponents[NUM_COLOR_COMPONENTS] = {"hue", "sat", "lgt", "alp"};
+
+void ReadInfoByJson(IStorage *pStorage, const char *pSkinName, STeeInfo &TeeInfos)
+{
+	char aBuf[IO_MAX_PATH_LENGTH];
+	str_format(aBuf, sizeof(aBuf), "skins/%s.json", pSkinName);
+	CJsonParser JsonParser;
+	const json_value *pJsonData = JsonParser.ParseFile(aBuf, pStorage);
+	if(pJsonData == 0)
+	{
+		str_format(aBuf, sizeof(aBuf), "failed to load skin '%s': %s", pSkinName, JsonParser.Error());
+		dbg_msg("skins", aBuf);
+		return;
+	}
+
+	mem_zero(&TeeInfos, sizeof(TeeInfos));
+	// extract data
+	const json_value &rStart = (*pJsonData)["skin"];
+	if(rStart.type == json_object)
+	{
+		for(int PartIndex = 0; PartIndex < NUM_SKINPARTS; ++PartIndex)
+		{
+			const json_value &rPart = rStart[(const char *)s_apSkinPartNames[PartIndex]];
+			if(rPart.type != json_object)
+				continue;
+
+			// name
+			const json_value &rFilename = rPart["name"];
+			str_copy(TeeInfos.m_aaSkinPartNames[PartIndex], rFilename, sizeof(TeeInfos.m_aaSkinPartNames[PartIndex]));
+
+			// use custom colors
+			bool UseCustomColors = false;
+			const json_value &rColor = rPart["custom_colors"];
+			if(rColor.type == json_string)
+				UseCustomColors = str_comp((const char *)rColor, "true") == 0;
+			else if(rColor.type == json_boolean)
+				UseCustomColors = rColor.u.boolean;
+			TeeInfos.m_aUseCustomColors[PartIndex] = UseCustomColors;
+
+			// color components
+			if(!UseCustomColors)
+				continue;
+
+			for(int i = 0; i < NUM_COLOR_COMPONENTS; i++)
+			{
+				if(PartIndex != SKINPART_MARKING && i == 3)
+					continue;
+
+				const json_value &rComponent = rPart[(const char *)s_apColorComponents[i]];
+				if(rComponent.type == json_integer)
+				{
+					switch(i)
+					{
+					case 0: TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex]&0xFF00FFFF) | (rComponent.u.integer << 16); break;
+					case 1:	TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex]&0xFFFF00FF) | (rComponent.u.integer << 8); break;
+					case 2: TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex]&0xFFFFFF00) | rComponent.u.integer; break;
+					case 3: TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex]&0x00FFFFFF) | (rComponent.u.integer << 24); break;
+					}
+				}
+			}
+		}
+	}
+}
 
 STeeInfo GenerateRandomSkin()
 {

@@ -359,3 +359,25 @@ CEntity *CGameWorld::ClosestEntity(vec2 Pos, float Radius, EEntityFlag Flag, CEn
 
 	return pClosest;
 }
+
+void CGameWorld::TriggerDarkMode()
+{
+	for(int i = 0; i < NUM_ENTTYPES; i++)
+		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt;)
+		{
+			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
+			pEnt->TriggerDarkMode();
+			pEnt = m_pNextTraverseEntity;
+		}
+}
+
+void CGameWorld::TriggerDarkModeOver()
+{
+	for(int i = 0; i < NUM_ENTTYPES; i++)
+		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt;)
+		{
+			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
+			pEnt->TriggerDarkModeOver();
+			pEnt = m_pNextTraverseEntity;
+		}
+}

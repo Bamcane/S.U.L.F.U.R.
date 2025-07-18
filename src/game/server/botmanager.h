@@ -49,6 +49,7 @@ public:
 
 	void OnBotDeath(Uuid BotID);
 	void OnClientRefresh(int ClientID);
+	void RequestRefreshMap(Uuid BotID);
 
 	void PostSnap();
 };

@@ -503,6 +503,8 @@ set(EXPECTED_DATA
   mapres/winter_mountains2.png
   mapres/winter_mountains3.png
   maps/Port.map
+  skins/c29z.json
+  skins/c29z_dark.json
 )
 
 set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttc;ttf;txt;wv" datasrc ${EXPECTED_DATA})

@@ -312,6 +312,21 @@ void CGameController::Tick()
 			GameServer()->CreatePlayerSpawn(pChr->GetPos(), pChr->GameWorld()->CmaskAllInWorld());
 		}
 	}
+
+	if((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) == (610 * Server()->TickSpeed()))
+	{
+		for(auto& [Uuid, pWorld] : GameServer()->m_upWorlds)
+		{
+			pWorld->TriggerDarkMode();
+		}
+	}
+	else if((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) == 0)
+	{
+		for(auto& [Uuid, pWorld] : GameServer()->m_upWorlds)
+		{
+			pWorld->TriggerDarkModeOver();
+		}
+	}
 }
 
 // info
@@ -530,6 +545,11 @@ int CGameController::GetStartTeam()
 	// determine new team
 	int Team = TEAM_RED;
 	return Team;
+}
+
+bool CGameController::IsInDarkMode() const
+{
+	return ((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) >= (610 * Server()->TickSpeed())) && ((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) <= (1190 * Server()->TickSpeed()));
 }
 
 void CGameController::RegisterChatCommands(CCommandManager *pManager)

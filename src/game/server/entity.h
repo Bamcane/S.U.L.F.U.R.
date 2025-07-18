@@ -147,6 +147,9 @@ public:
 
 	int64 CmaskAllInWorld() { return GameWorld()->CmaskAllInWorld(); }
 	int64 CmaskAllInWorldExceptOne(int ClientID) { return GameWorld()->CmaskAllInWorldExceptOne(ClientID); }
+
+	virtual void TriggerDarkMode() {};
+	virtual void TriggerDarkModeOver() {};
 };
 
 template<class IBaseEntity>

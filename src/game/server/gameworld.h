@@ -180,6 +180,9 @@ public:
 
 	int64 CmaskAllInWorld();
 	int64 CmaskAllInWorldExceptOne(int ClientID);
+
+	void TriggerDarkMode();
+	void TriggerDarkModeOver();
 };
 
 #endif

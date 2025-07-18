@@ -11,6 +11,8 @@ struct STeeInfo
 	int m_aSkinPartColors[NUM_SKINPARTS];
 };
 
+void ReadInfoByJson(class IStorage *pStorage, const char *pSkinName, STeeInfo &TeeInfos);
+
 STeeInfo GenerateRandomSkin();
 
 #endif // GAME_SERVER_TEEINFO_H

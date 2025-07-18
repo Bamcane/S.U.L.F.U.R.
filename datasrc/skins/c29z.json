@@ -1,0 +1,32 @@
+{
+	"skin": {
+		"body": {
+			"name": "kitty",
+			"custom_colors": true,
+			"hue": 27,
+			"sat": 111,
+			"lgt": 255
+		},
+		"hands": {
+			"name": "standard",
+			"custom_colors": true,
+			"hue": 0,
+			"sat": 0,
+			"lgt": 255
+		},
+		"feet": {
+			"name": "standard",
+			"custom_colors": true,
+			"hue": 0,
+			"sat": 0,
+			"lgt": 255
+		},
+		"eyes": {
+			"name": "negative",
+			"custom_colors": true,
+			"hue": 0,
+			"sat": 0,
+			"lgt": 66
+		}
+	}
+}

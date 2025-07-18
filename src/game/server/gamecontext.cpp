@@ -438,8 +438,6 @@ void CGameContext::SendVoteClearOptions(int ClientID)
 void CGameContext::SendTuningParams(int ClientID)
 {
 	CTuningParams Tuning = m_Tuning;
-	Tuning.m_PlayerHooking = 0;
-	Tuning.m_PlayerCollision = 0;
 	CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
 	int *pParams = (int *) &Tuning;
 	for(unsigned i = 0; i < sizeof(Tuning) / sizeof(int); i++)
@@ -1638,6 +1636,9 @@ void CGameContext::LoadNewWorld(Uuid WorldID)
 		}
 	}
 	m_upWorlds[WorldID] = pWorld;
+
+	if(GameController()->IsInDarkMode())
+		m_upWorlds[WorldID]->TriggerDarkMode();
 }
 
 void CGameContext::SwitchPlayerWorld(int ClientID, Uuid WorldID)
