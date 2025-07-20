@@ -272,6 +272,9 @@ void CCharacter::FireWeapon()
 	{
 		GameServer()->CreateSound(m_Pos, SOUND_HAMMER_FIRE, CmaskAllInWorld());
 
+		if(GameServer()->GameController()->GetWeaponDamage(WEAPON_HAMMER, GameWorld()) == 0)
+			break;
+
 		CDamageEntity *apEnts[MAX_CHECK_ENTITY];
 		int Hits = 0;
 		int Num = GameWorld()->FindEntities(ProjStartPos, GetProximityRadius() * 0.5f, (CEntity **) apEnts,
@@ -645,7 +648,7 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, in
 		return false;
 
 	// create healthmod indicator
-	GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), Source, OldHealth - m_Health, OldArmor - m_Armor, pFrom == this);
+	GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), Source, OldHealth - m_Health, OldArmor - m_Armor, pFrom == this, GameWorld()->CmaskAllInWorld());
 
 	// do damage Hit sound
 	if(pFrom && pFrom != this && Owner > -1 && GameServer()->m_apPlayers[Owner])
@@ -739,6 +742,9 @@ void CCharacter::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
+	if(GameWorld()->m_WorldUuid == Server()->GetBaseMapUuid() && SnappingClient != GetCID())
+		return;
+
 	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_Character)));
 	if(!pCharacter)
 		return;
@@ -797,7 +803,7 @@ void CCharacter::Snap(int SnappingClient)
 		CNetObj_Pickup *pPortalPointer = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
 		if(!pPortalPointer)
 			return;
-		vec2 PointerPos = m_Pos + normalize(m_ClosetPortal - m_Pos) * 48.0f;
+		vec2 PointerPos = m_Pos + normalize(m_ClosetPortal - m_Pos) * 48.0f + m_Core.m_Vel;
 		pPortalPointer->m_X = round_to_int(PointerPos.x);
 		pPortalPointer->m_Y = round_to_int(PointerPos.y);
 		pPortalPointer->m_Type = PICKUP_HEALTH;
