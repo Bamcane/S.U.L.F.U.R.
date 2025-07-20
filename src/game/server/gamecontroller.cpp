@@ -422,7 +422,7 @@ void CGameController::OnPlayerTeleport(int ClientID, const char *pString)
 void CGameController::OnPlayerDeathWhenDarkMode(int ClientID)
 {
 	int Time = 1200 - round_to_int((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) / Server()->TickSpeed());
-	// S.U.L.F.U.R. Scientific Unconventional Laboratory Field Unit Response 科学非常规现场调查局
+	// S.U.L.F.U.R. Scientific Unconventional Laboratory Field Unit Response 科学非常规现象调查局
 	char aBanMsg[128];
 	str_format(aBanMsg, sizeof(aBanMsg), "S.U.L.F.U.R. protected your safety.\nPlease re-execute the survey task after %d seconds", Time);
 	Server()->DoSpecialBan(ClientID, Time, aBanMsg);

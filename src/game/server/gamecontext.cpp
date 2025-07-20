@@ -492,7 +492,8 @@ void CGameContext::OnTick()
 		if(m_apPlayers[i])
 		{
 			m_apPlayers[i]->Tick();
-			m_apPlayers[i]->PostTick();
+			if(m_apPlayers[i])
+				m_apPlayers[i]->PostTick();
 		}
 	}
 

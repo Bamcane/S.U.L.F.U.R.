@@ -76,6 +76,12 @@ void CPlayer::Tick()
 	{
 		delete m_pCharacter;
 		m_pCharacter = 0;
+		if(GameServer()->GameController()->IsInDarkMode())
+		{
+			GameServer()->CreatePlayerSpawn(m_ViewPos, GameWorld()->CmaskAllInWorld());
+			GameServer()->GameController()->OnPlayerDeathWhenDarkMode(m_ClientID);
+			return;
+		}
 	}
 
 	if(!m_pCharacter && m_Team == TEAM_SPECTATORS && m_SpecMode == SPEC_FREEVIEW)
@@ -150,13 +156,6 @@ void CPlayer::PostTick()
 	}
 
 	m_LastViewPos = m_ViewPos;
-
-	if(m_Team != TEAM_SPECTATORS && !m_pCharacter && GameServer()->GameController()->IsInDarkMode())
-	{
-		GameServer()->CreatePlayerSpawn(m_ViewPos, GameWorld()->CmaskAllInWorld());
-		GameServer()->GameController()->OnPlayerDeathWhenDarkMode(m_ClientID);
-		return;
-	}
 }
 
 void CPlayer::Snap(int SnappingClient)
