@@ -1136,6 +1136,8 @@ void CServer::ExpireServerInfo()
 
 void CServer::UpdateRegisterServerInfo()
 {
+	if(!m_pRegister)
+		return;
 	// count the players
 	int PlayerCount = 0, ClientCount = 0;
 	for(int i = 0; i < MAX_CLIENTS; i++)
