@@ -145,17 +145,18 @@ void CPlayer::PostTick()
 			{
 				GameServer()->SendChatTarget(m_ClientID, "Teleport request cancelled");
 				m_TeleportTimer = -1;
+
+				if(GameServer()->GameController()->IsInDarkMode())
+				{
+					GameServer()->CreatePlayerSpawn(m_ViewPos, GameWorld()->CmaskAllInWorld());
+					GameServer()->GameController()->OnPlayerDeathWhenDarkMode(m_ClientID);
+					return;
+				}
 			}
 		}
 	}
 
 	m_LastViewPos = m_ViewPos;
-
-	if(m_Team != TEAM_SPECTATORS && GameServer()->GameController()->IsInDarkMode())
-	{
-		GameServer()->CreatePlayerSpawn(m_ViewPos, GameWorld()->CmaskAllInWorld());
-		GameServer()->GameController()->OnPlayerDeathWhenDarkMode(m_ClientID);
-	}
 }
 
 void CPlayer::Snap(int SnappingClient)
