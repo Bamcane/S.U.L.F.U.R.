@@ -34,7 +34,7 @@ public:
 
 	SImage *AddExternalImage(const char *pImageName, int Width, int Height);
 	SImage *AddEmbeddedImage(const char *pImageName, bool Flag = false);
-	
+
 	SEnvelope *AddEnvelope(const char *pEnvName, EEnvType Type, bool Synchronized);
 
 	SGroupInfo *AddGroup(const char *pName);

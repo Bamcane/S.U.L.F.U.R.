@@ -30,8 +30,8 @@ static STeeInfo g_aStdSkins[] = {
 	{{"standard", "twintri", "", "standard", "standard", "standard"}, {true, true, false, true, true, false}, {3447932, -14098717, 0, 185, 9634888, 0}},
 	{{"standard", "warpaint", "", "standard", "standard", "standard"}, {true, false, false, true, true, false}, {1944919, 0, 0, 750337, 1944919, 0}}};
 
-static const char * const s_apSkinPartNames[NUM_SKINPARTS] = {"body", "marking", "decoration", "hands", "feet", "eyes"}; 
-static const char * const s_apColorComponents[NUM_COLOR_COMPONENTS] = {"hue", "sat", "lgt", "alp"};
+static const char *const s_apSkinPartNames[NUM_SKINPARTS] = {"body", "marking", "decoration", "hands", "feet", "eyes"};
+static const char *const s_apColorComponents[NUM_COLOR_COMPONENTS] = {"hue", "sat", "lgt", "alp"};
 
 void ReadInfoByJson(IStorage *pStorage, const char *pSkinName, STeeInfo &TeeInfos)
 {
@@ -52,7 +52,7 @@ void ReadInfoByJson(IStorage *pStorage, const char *pSkinName, STeeInfo &TeeInfo
 	{
 		for(int PartIndex = 0; PartIndex < NUM_SKINPARTS; ++PartIndex)
 		{
-			const json_value &rPart = rStart[(const char *)s_apSkinPartNames[PartIndex]];
+			const json_value &rPart = rStart[(const char *) s_apSkinPartNames[PartIndex]];
 			if(rPart.type != json_object)
 				continue;
 
@@ -64,7 +64,7 @@ void ReadInfoByJson(IStorage *pStorage, const char *pSkinName, STeeInfo &TeeInfo
 			bool UseCustomColors = false;
 			const json_value &rColor = rPart["custom_colors"];
 			if(rColor.type == json_string)
-				UseCustomColors = str_comp((const char *)rColor, "true") == 0;
+				UseCustomColors = str_comp((const char *) rColor, "true") == 0;
 			else if(rColor.type == json_boolean)
 				UseCustomColors = rColor.u.boolean;
 			TeeInfos.m_aUseCustomColors[PartIndex] = UseCustomColors;
@@ -78,15 +78,15 @@ void ReadInfoByJson(IStorage *pStorage, const char *pSkinName, STeeInfo &TeeInfo
 				if(PartIndex != SKINPART_MARKING && i == 3)
 					continue;
 
-				const json_value &rComponent = rPart[(const char *)s_apColorComponents[i]];
+				const json_value &rComponent = rPart[(const char *) s_apColorComponents[i]];
 				if(rComponent.type == json_integer)
 				{
 					switch(i)
 					{
-					case 0: TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex]&0xFF00FFFF) | (rComponent.u.integer << 16); break;
-					case 1:	TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex]&0xFFFF00FF) | (rComponent.u.integer << 8); break;
-					case 2: TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex]&0xFFFFFF00) | rComponent.u.integer; break;
-					case 3: TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex]&0x00FFFFFF) | (rComponent.u.integer << 24); break;
+					case 0: TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex] & 0xFF00FFFF) | (rComponent.u.integer << 16); break;
+					case 1: TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex] & 0xFFFF00FF) | (rComponent.u.integer << 8); break;
+					case 2: TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex] & 0xFFFFFF00) | rComponent.u.integer; break;
+					case 3: TeeInfos.m_aSkinPartColors[PartIndex] = (TeeInfos.m_aSkinPartColors[PartIndex] & 0x00FFFFFF) | (rComponent.u.integer << 24); break;
 					}
 				}
 			}

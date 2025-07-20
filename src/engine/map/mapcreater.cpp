@@ -21,7 +21,7 @@
 #include "auto_map.h"
 #include "mapcreater.h"
 
-#define MAP_POS 
+#define MAP_POS
 
 void FreePNG(CImageInfo *pImg)
 {
@@ -292,10 +292,10 @@ SEnvelope *CMapCreater::AddEnvelope(const char *pEnvName, EEnvType Type, bool Sy
 
 	switch(Type)
 	{
-		case EEnvType::Pos: m_apEnvelopes.add(new SPosEnvelope()); break;
-		case EEnvType::Color: m_apEnvelopes.add(new SColorEnvelope()); break;
-		case EEnvType::Sound: m_apEnvelopes.add(new SSoundEnvelope()); break;
-		default: return nullptr;
+	case EEnvType::Pos: m_apEnvelopes.add(new SPosEnvelope()); break;
+	case EEnvType::Color: m_apEnvelopes.add(new SColorEnvelope()); break;
+	case EEnvType::Sound: m_apEnvelopes.add(new SSoundEnvelope()); break;
+	default: return nullptr;
 	}
 	SEnvelope *pEnv = m_apEnvelopes[m_apEnvelopes.size() - 1];
 
@@ -391,7 +391,7 @@ void CMapCreater::AddMiniMap()
 				pNewLayer->m_Color = ColorRGBA{0, 255, 255, 55};
 				pNewLayer->m_pImage = pLayer->m_pImage;
 				pNewLayer->m_Flags |= LAYERFLAG_DETAIL;
-				
+
 				int Width, Height;
 				Width = ((SLayerTilemap *) pLayer)->m_Width;
 				Height = ((SLayerTilemap *) pLayer)->m_Height;
@@ -900,7 +900,7 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 		Item.m_StartPoint = PointCount;
 		Item.m_NumPoints = pEnv->m_apEnvPoints.size();
 		Item.m_Synchronized = pEnv->m_Synchronized ? 1 : 0;
-		StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), pEnv->m_aName);
+		StrToInts(Item.m_aName, sizeof(Item.m_aName) / sizeof(int), pEnv->m_aName);
 
 		pEnv->m_EnvID = NumEnvelopes;
 
@@ -910,7 +910,7 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 
 	// save points
 	int TotalSize = sizeof(CEnvPoint_v1) * PointCount;
-	unsigned char *pPoints = (unsigned char *)mem_alloc(TotalSize);
+	unsigned char *pPoints = (unsigned char *) mem_alloc(TotalSize);
 	int Offset = 0;
 	for(auto &pEnv : m_apEnvelopes)
 	{
@@ -1027,7 +1027,8 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 					pQuad->m_ColorEnv = pOriginQuad->m_pColorEnv ? pOriginQuad->m_pColorEnv->m_EnvID : -1;
 					pQuad->m_ColorEnvOffset = 0;
 
-					pQuad->m_PosEnv = pOriginQuad->m_pPosEnv ? pOriginQuad->m_pPosEnv->m_EnvID : -1;;
+					pQuad->m_PosEnv = pOriginQuad->m_pPosEnv ? pOriginQuad->m_pPosEnv->m_EnvID : -1;
+					;
 					pQuad->m_PosEnvOffset = 0;
 				}
 

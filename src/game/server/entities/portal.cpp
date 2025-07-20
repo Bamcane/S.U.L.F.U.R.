@@ -31,7 +31,7 @@ void CPortal::Tick()
 {
 	for(CCharacter *pChr = (CCharacter *) GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChr; pChr = (CCharacter *) pChr->TypeNext())
 	{
-		for(auto& Pos : s_aPortalCheckPoints)
+		for(auto &Pos : s_aPortalCheckPoints)
 		{
 			float Len = distance(GetPos() + Pos, pChr->GetPos());
 			if(Len < pChr->GetProximityRadius() + 2.f)

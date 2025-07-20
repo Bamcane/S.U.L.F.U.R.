@@ -165,7 +165,7 @@ void CCharacter::HandleNinja()
 				m_apHitObjects[m_NumObjectsHit++] = apEnts[i];
 
 			// set his velocity to fast upward (for now)
-			apEnts[i]->TakeDamage(vec2(0, -10.0f), m_Ninja.m_ActivationDir * -1, g_pData->m_Weapons.m_Ninja.m_pBase->m_Damage, this, WEAPON_NINJA);
+			apEnts[i]->TakeDamage(vec2(0, -10.0f), m_Ninja.m_ActivationDir * -1, GameServer()->GameController()->GetWeaponDamage(WEAPON_NINJA, GameWorld()), this, WEAPON_NINJA);
 		}
 	}
 }
@@ -296,7 +296,7 @@ void CCharacter::FireWeapon()
 			else
 				Dir = vec2(0.f, -1.f);
 
-			pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, Dir * -1, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
+			pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, Dir * -1, GameServer()->GameController()->GetWeaponDamage(WEAPON_HAMMER, GameWorld()),
 				this, m_ActiveWeapon);
 			Hits++;
 		}
@@ -314,7 +314,7 @@ void CCharacter::FireWeapon()
 			ProjStartPos,
 			Direction,
 			(int) (Server()->TickSpeed() * GameServer()->Tuning()->m_GunLifetime),
-			g_pData->m_Weapons.m_Gun.m_pBase->m_Damage, false, 0, -1, WEAPON_GUN);
+			GameServer()->GameController()->GetWeaponDamage(WEAPON_GUN, GameWorld()), false, 0, -1, WEAPON_GUN);
 
 		GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE, CmaskAllInWorld());
 	}
@@ -336,7 +336,7 @@ void CCharacter::FireWeapon()
 				ProjStartPos,
 				vec2(cosf(a), sinf(a)) * Speed,
 				(int) (Server()->TickSpeed() * GameServer()->Tuning()->m_ShotgunLifetime),
-				g_pData->m_Weapons.m_Shotgun.m_pBase->m_Damage, false, 0, -1, WEAPON_SHOTGUN);
+				GameServer()->GameController()->GetWeaponDamage(WEAPON_SHOTGUN, GameWorld()), false, 0, -1, WEAPON_SHOTGUN);
 		}
 
 		GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE, CmaskAllInWorld());
@@ -350,7 +350,7 @@ void CCharacter::FireWeapon()
 			ProjStartPos,
 			Direction,
 			(int) (Server()->TickSpeed() * GameServer()->Tuning()->m_GrenadeLifetime),
-			g_pData->m_Weapons.m_Grenade.m_pBase->m_Damage, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_GRENADE);
+			GameServer()->GameController()->GetWeaponDamage(WEAPON_GRENADE, GameWorld()), true, 0, SOUND_GRENADE_EXPLODE, WEAPON_GRENADE);
 
 		GameServer()->CreateSound(m_Pos, SOUND_GRENADE_FIRE, CmaskAllInWorld());
 	}
@@ -641,6 +641,9 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, in
 	int OldHealth = m_Health, OldArmor = m_Armor;
 	bool Return = CDamageEntity::TakeDamage(Force, Source, Dmg, pFrom, Weapon);
 
+	if(Return == false)
+		return false;
+
 	// create healthmod indicator
 	GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), Source, OldHealth - m_Health, OldArmor - m_Armor, pFrom == this);
 
@@ -728,7 +731,10 @@ void CCharacter::Die(CEntity *pKiller, int Weapon)
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID(), CmaskAllInWorld());
 
 	if(GameServer()->GameController()->IsInDarkMode())
+	{
+		GameServer()->CreatePlayerSpawn(m_Pos, GameWorld()->CmaskAllInWorld());
 		GameServer()->GameController()->OnPlayerDeathWhenDarkMode(m_pPlayer->GetCID());
+	}
 }
 
 void CCharacter::Snap(int SnappingClient)

@@ -203,8 +203,7 @@ void CMapGen::GenerateGameLayer()
 	{
 		PortalPos.x = random_int() % (MAP_WIDTH - 2) + 1;
 		PortalPos.y = random_int() % (MAP_HEIGHT - 2) + 1;
-	}
-	while(m_pGameTiles[PortalPos.y * MAP_WIDTH + PortalPos.x].m_Index == TILE_SOLID);
+	} while(m_pGameTiles[PortalPos.y * MAP_WIDTH + PortalPos.x].m_Index == TILE_SOLID);
 
 	m_pGameTiles[PortalPos.y * MAP_WIDTH + PortalPos.x].m_Index = ENTITY_OFFSET + ENTITY_PORT_PORTAL;
 }
@@ -342,7 +341,7 @@ void CMapGen::UseDarkMode()
 	SLayerQuads *pLayer = pGroup->AddQuadsLayer("Quads");
 	SEnvelope *pEnv = m_pMapCreater->AddEnvelope("Dark mode", EEnvType::Color, true);
 	{
-		SEnvPoint *pPoint = nullptr; 
+		SEnvPoint *pPoint = nullptr;
 		{
 			pPoint = pEnv->AddEnvPoint(0, CURVETYPE_STEP);
 			pPoint->m_aValues[0] = 255.f / 255.f;

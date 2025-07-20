@@ -6,6 +6,7 @@
 class CPortal : public CEntity
 {
 	int m_aPortalIDs[4];
+
 public:
 	CPortal(CGameWorld *pGameWorld, vec2 Pos);
 	~CPortal();

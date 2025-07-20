@@ -10,8 +10,6 @@
 #include "character.h"
 #include "oldtee.h"
 
-
-
 // also c29z
 COldTee::COldTee(CGameWorld *pWorld, vec2 Pos, Uuid BotID, STeeInfo TeeInfo) :
 	CBotEntity(pWorld, Pos, BotID, TeeInfo)
@@ -170,7 +168,7 @@ void COldTee::Action()
 		{
 			m_RandomEmoteTimer = random_int() % 500 + 500;
 			GameServer()->BotManager()->SendEmoticon(random_int() % NUM_EMOTICONS, GetBotID());
-			GameServer()->BotManager()->SendChat(-1, m_DarkMode ? "V2h5IGRvIFlPVSBsZWF2ZSBtZSBBTE9ORS4uLi4u"  : "Ahh....So strange...", GetBotID());
+			GameServer()->BotManager()->SendChat(-1, m_DarkMode ? "V2h5IGRvIFlPVSBsZWF2ZSBtZSBBTE9ORS4uLi4u" : "Ahh....So strange...", GetBotID());
 		}
 	}
 }

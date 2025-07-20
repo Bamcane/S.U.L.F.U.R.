@@ -16,6 +16,7 @@ public:
 
 	void TriggerDarkMode() override;
 	void TriggerDarkModeOver() override;
+
 protected:
 	void Action() override;
 	int m_RandomEmoteTimer;

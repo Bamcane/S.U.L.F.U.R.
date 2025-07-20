@@ -349,7 +349,7 @@ void CBotManager::RequestRefreshMap(Uuid BotID)
 				}
 
 				Server()->SendPackMsg(&NewInfo, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
-					break;
+				break;
 			}
 		}
 	}

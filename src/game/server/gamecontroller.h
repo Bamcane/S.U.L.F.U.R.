@@ -127,6 +127,9 @@ public:
 	int GetRealPlayerNum() const { return m_RealPlayerNum; }
 	int GetStartTeam();
 
+	int GetWeaponDamage(int WeaponID, Uuid WorldID);
+	int GetWeaponDamage(int WeaponID, class CGameWorld *pWorld);
+
 	bool IsInDarkMode() const;
 	// static void Com_Example(IConsole::IResult *pResult, void *pContext);
 	void RegisterChatCommands(CCommandManager *pManager);

@@ -2,6 +2,8 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/shared/config.h>
 
+#include <generated/server_data.h>
+
 #include <game/mapitems.h>
 #include <game/version.h>
 
@@ -319,7 +321,7 @@ void CGameController::Tick()
 
 	if((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) == (610 * Server()->TickSpeed()))
 	{
-		for(auto& [Uuid, pWorld] : GameServer()->m_upWorlds)
+		for(auto &[Uuid, pWorld] : GameServer()->m_upWorlds)
 		{
 			pWorld->TriggerDarkMode();
 		}
@@ -329,7 +331,7 @@ void CGameController::Tick()
 	}
 	else if((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) == 0)
 	{
-		for(auto& [Uuid, pWorld] : GameServer()->m_upWorlds)
+		for(auto &[Uuid, pWorld] : GameServer()->m_upWorlds)
 		{
 			pWorld->TriggerDarkModeOver();
 		}
@@ -609,6 +611,27 @@ int CGameController::GetStartTeam()
 	// determine new team
 	int Team = TEAM_RED;
 	return Team;
+}
+
+int CGameController::GetWeaponDamage(int WeaponID, Uuid WorldID)
+{
+	if(WorldID == Server()->GetBaseMapUuid() && !IsInDarkMode())
+		return 0;
+	switch(WeaponID)
+	{
+	case WEAPON_HAMMER: return g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage;
+	case WEAPON_GUN: return g_pData->m_Weapons.m_Gun.m_pBase->m_Damage;
+	case WEAPON_SHOTGUN: return g_pData->m_Weapons.m_Shotgun.m_pBase->m_Damage;
+	case WEAPON_GRENADE: return g_pData->m_Weapons.m_Grenade.m_pBase->m_Damage;
+	case WEAPON_LASER: return g_pData->m_Weapons.m_Laser.m_pBase->m_Damage;
+	case WEAPON_NINJA: return g_pData->m_Weapons.m_Ninja.m_pBase->m_Damage;
+	}
+	return 0;
+}
+
+int CGameController::GetWeaponDamage(int WeaponID, CGameWorld *pWorld)
+{
+	return GetWeaponDamage(WeaponID, pWorld->m_WorldUuid);
 }
 
 bool CGameController::IsInDarkMode() const

@@ -1461,8 +1461,8 @@ void CGameContext::RemoveCommandHook(const CCommandManager::CCommand *pCommand, 
 
 void CGameContext::ComGoto(IConsole::IResult *pResult, void *pContext)
 {
-	CCommandManager::SCommandContext *pComContext = (CCommandManager::SCommandContext *)pContext;
-	CGameContext *pSelf = (CGameContext *)pComContext->m_pContext;
+	CCommandManager::SCommandContext *pComContext = (CCommandManager::SCommandContext *) pContext;
+	CGameContext *pSelf = (CGameContext *) pComContext->m_pContext;
 
 	pSelf->GameController()->OnPlayerTeleport(pComContext->m_ClientID, pResult->GetString(0));
 }

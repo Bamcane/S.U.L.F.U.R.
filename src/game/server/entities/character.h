@@ -112,6 +112,7 @@ private:
 	bool m_PortalFounded;
 	vec2 m_ClosetPortal;
 	void FindClosetPortal();
+
 public:
 	void SetPos(vec2 Pos, bool Reset = false);
 	int GetCID() const;
