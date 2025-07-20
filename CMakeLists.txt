@@ -503,6 +503,7 @@ set(EXPECTED_DATA
   mapres/winter_mountains2.png
   mapres/winter_mountains3.png
   maps/Port.map
+  maps/Void.map
   skins/c29z.json
   skins/c29z_dark.json
 )
@@ -761,6 +762,8 @@ set_src(GAME_SERVER GLOB_RECURSE src/game/server
   entities/oldtee.h
   entities/pickup.cpp
   entities/pickup.h
+  entities/portal.cpp
+  entities/portal.h
   entities/projectile.cpp
   entities/projectile.h
   entity.cpp

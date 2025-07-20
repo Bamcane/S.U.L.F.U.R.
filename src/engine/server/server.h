@@ -292,6 +292,11 @@ public:
 
 	void SwitchClientMap(int ClientID, Uuid MapID) override;
 	void RequestNewWorld(int ClientID, const char *pWorldName) override;
+
+	Uuid GetBaseMapUuid() const override { return m_BaseMapUuid; }
+	const char *GetMapName(Uuid MapID) override;
+
+	void DoSpecialBan(int ClientID, int Time, const char *pBanMsg) override;
 };
 
 #endif

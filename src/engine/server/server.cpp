@@ -1350,6 +1350,10 @@ int CServer::LoadMap(const char *pMapName, bool Generated)
 		io_read(File, m_uMapDatas[MapUuid].m_pData, m_uMapDatas[MapUuid].m_Size);
 		io_close(File);
 	}
+
+	if(!Generated)
+		GameServer()->LoadNewWorld(MapUuid);
+
 	return 1;
 }
 
@@ -1368,13 +1372,6 @@ int CServer::Run()
 	//
 	m_PrintCBIndex = Console()->RegisterPrintCallback(Config()->m_ConsoleOutputLevel, SendRconLineAuthed, this);
 
-	// load map
-	if(!LoadMap(Config()->m_SvMap))
-	{
-		dbg_msg("server", "failed to load map. mapname='%s'", Config()->m_SvMap);
-		Free();
-		return -1;
-	}
 	m_BaseMapUuid = CalculateUuid(Config()->m_SvMap);
 	m_MapChunksPerRequest = Config()->m_SvMapDownloadSpeed;
 
@@ -1423,6 +1420,15 @@ int CServer::Run()
 	}
 	str_format(aBuf, sizeof(aBuf), "game version %s", GameServer()->Version());
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+
+	// load map
+	if(!LoadMap(Config()->m_SvMap))
+	{
+		dbg_msg("server", "failed to load map. mapname='%s'", Config()->m_SvMap);
+		Free();
+		return -1;
+	}
+	LoadMap("Void");
 
 	// process pending commands
 	m_pConsole->StoreCommands(false);
@@ -1851,6 +1857,20 @@ void CServer::RequestNewWorld(int ClientID, const char *pWorldName)
 	},
 		ClientID, string(pWorldName))
 		.detach();
+}
+
+const char *CServer::GetMapName(Uuid MapID)
+{
+	if(!m_uMapDatas.count(MapID))
+		return "Unknowned World";
+	return m_uMapDatas[MapID].m_aName;
+}
+
+void CServer::DoSpecialBan(int ClientID, int Time, const char *pBanMsg)
+{
+	NETADDR Addr = *m_NetServer.ClientAddr(ClientID);
+	m_NetServer.Drop(ClientID, pBanMsg);
+	m_ServerBan.BanAddr(&Addr, Time, pBanMsg);
 }
 
 static CServer *CreateServer() { return new CServer(); }

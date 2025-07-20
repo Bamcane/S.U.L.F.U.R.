@@ -142,6 +142,7 @@ public:
 	*/
 	int NetworkClipped(int SnappingClient);
 	int NetworkClipped(int SnappingClient, vec2 CheckPos);
+	int NetworkClippedLine(int SnappingClient, vec2 CheckPos, vec2 CheckPos2);
 
 	bool GameLayerClipped(vec2 CheckPos);
 

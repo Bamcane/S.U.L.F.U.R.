@@ -107,8 +107,10 @@ public:
 	bool IsTeamplay() const { return false; }
 	bool IsSurvival() const { return false; }
 
-	bool OnPlayerChat(int ClientID, const char *pMessage);
+	bool OnPlayerChat(int ClientID, const char *pMessage, char *pBuffer, int BufferSize);
 	void OnPlayerTeleport(int ClientID, const char *pString);
+	void OnPlayerDeathWhenDarkMode(int ClientID);
+	void OnPlayerSwitchMap(int ClientID, Uuid OldMapID, Uuid NewMapID);
 
 	const char *GetGameType() const { return m_pGameType; }
 

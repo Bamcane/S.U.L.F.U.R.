@@ -56,6 +56,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	GameServer()->GameController()->OnCharacterSpawn(this);
 
+	FindClosetPortal();
+
 	return true;
 }
 
@@ -504,6 +506,9 @@ void CCharacter::Tick()
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
 
+	if(Server()->Tick() % (5 * Server()->TickSpeed()) == 0)
+		FindClosetPortal();
+
 	// handle leaving gamelayer
 	if(GameLayerClipped(m_Pos))
 	{
@@ -661,6 +666,9 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, in
 
 void CCharacter::Die(CEntity *pKiller, int Weapon)
 {
+	if(!m_Alive)
+		return;
+
 	int Killer = pKiller ? m_pPlayer->GetCID() : -1;
 	if(pKiller && (pKiller->GetObjFlag() & EEntityFlag::ENTFLAG_OWNER))
 		Killer = ((COwnerEntity *) pKiller)->GetOwner();
@@ -715,6 +723,9 @@ void CCharacter::Die(CEntity *pKiller, int Weapon)
 	CDamageEntity::Die(pKiller, Weapon);
 	GameWorld()->m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID(), CmaskAllInWorld());
+
+	if(GameServer()->GameController()->IsInDarkMode())
+		GameServer()->GameController()->OnPlayerDeathWhenDarkMode(m_pPlayer->GetCID());
 }
 
 void CCharacter::Snap(int SnappingClient)
@@ -774,11 +785,36 @@ void CCharacter::Snap(int SnappingClient)
 		if(5 * Server()->TickSpeed() - ((Server()->Tick() - m_LastAction) % (5 * Server()->TickSpeed())) < 5)
 			pCharacter->m_Emote = EMOTE_BLINK;
 	}
+
+	if(m_PortalFounded)
+	{
+		CNetObj_Pickup *pPortalPointer = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
+		if(!pPortalPointer)
+			return;
+		vec2 PointerPos = m_Pos + normalize(m_ClosetPortal - m_Pos) * 48.0f;
+		pPortalPointer->m_X = round_to_int(PointerPos.x);
+		pPortalPointer->m_Y = round_to_int(PointerPos.y);
+		pPortalPointer->m_Type = PICKUP_HEALTH;
+	}
 }
 
 void CCharacter::PostSnap()
 {
 	m_TriggeredEvents = 0;
+}
+
+void CCharacter::FindClosetPortal()
+{
+	CEntity *pPortal = GameWorld()->ClosestEntity(m_Pos, 32e4, CGameWorld::ENTTYPE_PORTAL, nullptr);
+	if(pPortal)
+	{
+		m_ClosetPortal = pPortal->GetPos();
+		m_PortalFounded = true;
+	}
+	else
+	{
+		m_PortalFounded = false;
+	}
 }
 
 void CCharacter::SetPos(vec2 Pos, bool Reset)
@@ -787,4 +823,9 @@ void CCharacter::SetPos(vec2 Pos, bool Reset)
 		m_Core.m_Vel = vec2(0.f, 0.f);
 	m_Core.m_Pos = Pos;
 	m_Pos = Pos;
+}
+
+int CCharacter::GetCID() const
+{
+	return m_pPlayer->GetCID();
 }

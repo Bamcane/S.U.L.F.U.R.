@@ -25,7 +25,7 @@
 
 void FreePNG(CImageInfo *pImg)
 {
-	free(pImg->m_pData);
+	mem_free(pImg->m_pData);
 	pImg->m_pData = nullptr;
 }
 
@@ -59,7 +59,7 @@ int LoadPNG(CImageInfo *pImg, IStorage *pStorage, const char *pFilename)
 				pImg->m_Format = CImageInfo::FORMAT_RGBA;
 			else
 			{
-				free(pImgBuffer);
+				mem_free(pImgBuffer);
 				return 0;
 			}
 
@@ -87,8 +87,9 @@ CMapCreater::CMapCreater(IStorage *pStorage, IConsole *pConsole) :
 	m_pStorage(pStorage),
 	m_pConsole(pConsole)
 {
-	m_vpGroups.clear();
-	m_vpImages.clear();
+	m_apGroups.clear();
+	m_apImages.clear();
+	m_apEnvelopes.clear();
 
 	FT_Error Error = FT_Init_FreeType(&m_Library);
 	if(Error)
@@ -108,7 +109,7 @@ CMapCreater::CMapCreater(IStorage *pStorage, IConsole *pConsole) :
 
 	FT_New_Memory_Face(m_Library, (FT_Bytes) pBuf, Length, 0, &FtFace);
 
-	m_vFontFaces.add(FtFace);
+	m_aFontFaces.add(FtFace);
 
 	if(!Storage()->ReadFile("fonts/SourceHanSans.ttc", IStorage::TYPE_ALL, &pBuf, &Length))
 		return;
@@ -125,25 +126,34 @@ CMapCreater::CMapCreater(IStorage *pStorage, IConsole *pConsole) :
 			FT_Done_Face(FtFace);
 			break;
 		}
-		m_vFontFaces.add(FtFace);
+		m_aFontFaces.add(FtFace);
 	}
 }
 
 CMapCreater::~CMapCreater()
 {
-	for(auto &pImage : m_vpImages)
+	for(auto &pImage : m_apImages)
 	{
 		if(pImage->m_pImageData)
 		{
-			free(pImage->m_pImageData);
+			mem_free(pImage->m_pImageData);
 		}
 		delete pImage;
 	}
-	m_vpImages.clear();
-
-	for(auto &pGroup : m_vpGroups)
+	m_apImages.clear();
+	for(auto &pEnv : m_apEnvelopes)
 	{
-		for(auto &pLayer : pGroup->m_vpLayers)
+		for(auto &pEnvPoint : pEnv->m_apEnvPoints)
+		{
+			delete pEnvPoint;
+		}
+		delete pEnv;
+	}
+	m_apEnvelopes.clear();
+
+	for(auto &pGroup : m_apGroups)
+	{
+		for(auto &pLayer : pGroup->m_apLayers)
 		{
 			switch(pLayer->m_Type)
 			{
@@ -154,13 +164,13 @@ CMapCreater::~CMapCreater()
 			break;
 			case ELayerType::QUADS:
 			{
-				for(auto &pQuad : ((SLayerQuads *) pLayer)->m_vpQuads)
+				for(auto &pQuad : ((SLayerQuads *) pLayer)->m_apQuads)
 					delete pQuad;
 			}
 			break;
 			case ELayerType::TEXT:
 			{
-				for(auto &pText : ((SLayerText *) pLayer)->m_vpText)
+				for(auto &pText : ((SLayerText *) pLayer)->m_apText)
 					delete pText;
 			}
 			break;
@@ -169,12 +179,12 @@ CMapCreater::~CMapCreater()
 			}
 			delete pLayer;
 		}
-		pGroup->m_vpLayers.clear();
+		pGroup->m_apLayers.clear();
 		delete pGroup;
 	}
-	m_vpGroups.clear();
+	m_apGroups.clear();
 
-	for(auto Face : m_vFontFaces)
+	for(auto Face : m_aFontFaces)
 	{
 		FT_Done_Face(Face);
 	}
@@ -186,7 +196,7 @@ CMapCreater::~CMapCreater()
 static std::mutex s_ImageMutex;
 SImage *CMapCreater::AddEmbeddedImage(const char *pImageName, bool Flag)
 {
-	for(auto &pImage : m_vpImages)
+	for(auto &pImage : m_apImages)
 	{
 		if(str_comp(pImage->m_aName, pImageName) == 0)
 		{
@@ -215,8 +225,8 @@ SImage *CMapCreater::AddEmbeddedImage(const char *pImageName, bool Flag)
 
 	s_ImageMutex.lock();
 
-	m_vpImages.add(new SImage());
-	SImage *pImage = m_vpImages[m_vpImages.size() - 1];
+	m_apImages.add(new SImage());
+	SImage *pImage = m_apImages[m_apImages.size() - 1];
 
 	s_ImageMutex.unlock();
 
@@ -257,8 +267,8 @@ SImage *CMapCreater::AddExternalImage(const char *pImageName, int Width, int Hei
 {
 	s_ImageMutex.lock();
 
-	m_vpImages.add(new SImage());
-	SImage *pImage = m_vpImages[m_vpImages.size() - 1];
+	m_apImages.add(new SImage());
+	SImage *pImage = m_apImages[m_apImages.size() - 1];
 
 	s_ImageMutex.unlock();
 
@@ -275,13 +285,37 @@ SImage *CMapCreater::AddExternalImage(const char *pImageName, int Width, int Hei
 	return pImage;
 }
 
+static std::mutex s_EnvMutex;
+SEnvelope *CMapCreater::AddEnvelope(const char *pEnvName, EEnvType Type, bool Synchronized)
+{
+	s_EnvMutex.lock();
+
+	switch(Type)
+	{
+		case EEnvType::Pos: m_apEnvelopes.add(new SPosEnvelope()); break;
+		case EEnvType::Color: m_apEnvelopes.add(new SColorEnvelope()); break;
+		case EEnvType::Sound: m_apEnvelopes.add(new SSoundEnvelope()); break;
+		default: return nullptr;
+	}
+	SEnvelope *pEnv = m_apEnvelopes[m_apEnvelopes.size() - 1];
+
+	s_EnvMutex.unlock();
+
+	str_copy(pEnv->m_aName, pEnvName, sizeof(pEnv->m_aName));
+	pEnv->m_Synchronized = Synchronized;
+	pEnv->m_EnvID = -1;
+	pEnv->m_apEnvPoints.clear();
+
+	return pEnv;
+}
+
 static std::mutex s_GroupMutex;
 SGroupInfo *CMapCreater::AddGroup(const char *pName)
 {
 	s_GroupMutex.lock();
 
-	m_vpGroups.add(new SGroupInfo());
-	SGroupInfo *pGroup = m_vpGroups[m_vpGroups.size() - 1];
+	m_apGroups.add(new SGroupInfo());
+	SGroupInfo *pGroup = m_apGroups[m_apGroups.size() - 1];
 
 	s_GroupMutex.unlock();
 
@@ -345,11 +379,11 @@ void CMapCreater::AddMiniMap()
 		pNewLayer->m_Flags |= LAYERFLAG_DETAIL;
 		pNewLayer->AddQuad(StartPos, vec2(BlockSize, BlockSize), ColorRGBA{0, 0xff, 0xff, 100});
 	}
-	for(auto &pGroup : m_vpGroups)
+	for(auto &pGroup : m_apGroups)
 	{
 		if(pGroup == pMiniGroup)
 			continue;
-		for(auto &pLayer : pGroup->m_vpLayers)
+		for(auto &pLayer : pGroup->m_apLayers)
 		{
 			if(pLayer->m_Type == ELayerType::TILES && pLayer->m_UseInMinimap)
 			{
@@ -387,8 +421,8 @@ SLayerTilemap *SGroupInfo::AddTileLayer(const char *pName)
 {
 	s_LayerMutex.lock();
 
-	m_vpLayers.add(new SLayerTilemap());
-	SLayerTilemap *pLayer = (SLayerTilemap *) m_vpLayers[m_vpLayers.size() - 1];
+	m_apLayers.add(new SLayerTilemap());
+	SLayerTilemap *pLayer = (SLayerTilemap *) m_apLayers[m_apLayers.size() - 1];
 
 	s_LayerMutex.unlock();
 
@@ -397,6 +431,7 @@ SLayerTilemap *SGroupInfo::AddTileLayer(const char *pName)
 	pLayer->m_pImage = nullptr;
 
 	pLayer->m_Color = ColorRGBA(255, 255, 255, 255);
+	pLayer->m_pColorEnv = nullptr;
 
 	return pLayer;
 }
@@ -405,8 +440,8 @@ SLayerQuads *SGroupInfo::AddQuadsLayer(const char *pName)
 {
 	s_LayerMutex.lock();
 
-	m_vpLayers.add(new SLayerQuads());
-	SLayerQuads *pLayer = (SLayerQuads *) m_vpLayers[m_vpLayers.size() - 1];
+	m_apLayers.add(new SLayerQuads());
+	SLayerQuads *pLayer = (SLayerQuads *) m_apLayers[m_apLayers.size() - 1];
 
 	s_LayerMutex.unlock();
 
@@ -419,8 +454,8 @@ SLayerText *SGroupInfo::AddTextLayer(const char *pName)
 {
 	s_LayerMutex.lock();
 
-	m_vpLayers.add(new SLayerText());
-	SLayerText *pLayer = (SLayerText *) m_vpLayers[m_vpLayers.size() - 1];
+	m_apLayers.add(new SLayerText());
+	SLayerText *pLayer = (SLayerText *) m_apLayers[m_apLayers.size() - 1];
 
 	s_LayerMutex.unlock();
 
@@ -448,8 +483,8 @@ SQuad *SLayerQuads::AddQuad(vec2 Pos, vec2 Size, ColorRGBA Color)
 {
 	s_QuadMutex.lock();
 
-	m_vpQuads.add(new SQuad());
-	SQuad *pQuad = m_vpQuads[m_vpQuads.size() - 1];
+	m_apQuads.add(new SQuad());
+	SQuad *pQuad = m_apQuads[m_apQuads.size() - 1];
 
 	s_QuadMutex.unlock();
 
@@ -476,6 +511,8 @@ SQuad *SLayerQuads::AddQuad(vec2 Pos, vec2 Size, ColorRGBA Color)
 	pQuad->m_aTexcoords[1].u = pQuad->m_aTexcoords[3].u = 1024;
 	pQuad->m_aTexcoords[0].v = pQuad->m_aTexcoords[1].v = 0;
 	pQuad->m_aTexcoords[2].v = pQuad->m_aTexcoords[3].v = 1024;
+	pQuad->m_pColorEnv = nullptr;
+	pQuad->m_pPosEnv = nullptr;
 
 	return pQuad;
 }
@@ -484,8 +521,8 @@ static std::mutex s_TextMutex;
 SText *SLayerText::AddText(const char *pText, int Size, ivec2 Pos, bool Outline, bool Center)
 {
 	s_TextMutex.lock();
-	m_vpText.add(new SText());
-	SText *pTextObj = m_vpText[m_vpText.size() - 1];
+	m_apText.add(new SText());
+	SText *pTextObj = m_apText[m_apText.size() - 1];
 
 	s_TextMutex.unlock();
 
@@ -494,8 +531,29 @@ SText *SLayerText::AddText(const char *pText, int Size, ivec2 Pos, bool Outline,
 	pTextObj->m_Pos = Pos;
 	pTextObj->m_Outline = Outline;
 	pTextObj->m_Center = Center;
+	pTextObj->m_pColorEnv = nullptr;
+	pTextObj->m_pPosEnv = nullptr;
 
 	return pTextObj;
+}
+
+static std::mutex s_EnvPointMutex;
+SEnvPoint *SEnvelope::AddEnvPoint(int Time, int CurveType)
+{
+	s_EnvPointMutex.lock();
+	m_apEnvPoints.add(new SEnvPoint());
+	SEnvPoint *pEnvPoint = m_apEnvPoints[m_apEnvPoints.size() - 1];
+
+	s_EnvPointMutex.unlock();
+
+	pEnvPoint->m_Time = Time;
+	pEnvPoint->m_Curvetype = CurveType;
+	pEnvPoint->m_aValues[0] = 0.f;
+	pEnvPoint->m_aValues[1] = 0.f;
+	pEnvPoint->m_aValues[2] = 0.f;
+	pEnvPoint->m_aValues[3] = 0.f;
+
+	return pEnvPoint;
 }
 
 static int AdjustOutlineThicknessToFontSize(int OutlineThickness, int FontSize)
@@ -509,7 +567,7 @@ static int AdjustOutlineThicknessToFontSize(int OutlineThickness, int FontSize)
 
 void CMapCreater::GenerateQuadsFromTextLayer(SLayerText *pText, array<CQuad> &vpQuads)
 {
-	for(auto &pText : pText->m_vpText)
+	for(auto &pText : pText->m_apText)
 	{
 		int MaxHeight = 0;
 		int MaxWidth = 0;
@@ -534,7 +592,7 @@ void CMapCreater::GenerateQuadsFromTextLayer(SLayerText *pText, array<CQuad> &vp
 				FT_Face Face = NULL;
 				FT_ULong GlyphIndex = 0;
 
-				for(auto FtFace : m_vFontFaces)
+				for(auto FtFace : m_aFontFaces)
 				{
 					FT_ULong FtChar = Char;
 					if(FtChar == '\n')
@@ -627,10 +685,10 @@ void CMapCreater::GenerateQuadsFromTextLayer(SLayerText *pText, array<CQuad> &vp
 							Quad.m_aPoints[4].x = f2fx(Pos.x);
 							Quad.m_aPoints[4].y = f2fx(Pos.y);
 
-							Quad.m_ColorEnv = -1;
+							Quad.m_ColorEnv = pText->m_pColorEnv ? pText->m_pColorEnv->m_EnvID : -1;
 							Quad.m_ColorEnvOffset = 0;
 
-							Quad.m_PosEnv = -1;
+							Quad.m_PosEnv = pText->m_pPosEnv ? pText->m_pPosEnv->m_EnvID : -1;
 							Quad.m_PosEnvOffset = 0;
 
 							vpQuads.add(Quad);
@@ -802,12 +860,13 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 		DataFile.AddItem(MAPITEMTYPE_INFO, 0, sizeof(CMapItemInfo), &Item);
 	}
 
-	int NumGroups, NumLayers, NumImages;
+	int NumGroups, NumLayers, NumImages, NumEnvelopes;
 	NumGroups = 0;
 	NumLayers = 0;
 	NumImages = 0;
+	NumEnvelopes = 0;
 
-	for(auto &pImage : m_vpImages)
+	for(auto &pImage : m_apImages)
 	{
 		CMapItemImage Item;
 		Item.m_Version = CMapItemImage::CURRENT_VERSION;
@@ -831,7 +890,48 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 		DataFile.AddItem(MAPITEMTYPE_IMAGE, NumImages++, sizeof(CMapItemImage), &Item);
 	}
 
-	for(auto &pGroup : m_vpGroups)
+	// save envelopes
+	int PointCount = 0;
+	for(auto &pEnv : m_apEnvelopes)
+	{
+		CMapItemEnvelope_v2 Item;
+		Item.m_Version = CMapItemEnvelope_v2::CURRENT_VERSION;
+		Item.m_Channels = pEnv->Channels();
+		Item.m_StartPoint = PointCount;
+		Item.m_NumPoints = pEnv->m_apEnvPoints.size();
+		Item.m_Synchronized = pEnv->m_Synchronized ? 1 : 0;
+		StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), pEnv->m_aName);
+
+		pEnv->m_EnvID = NumEnvelopes;
+
+		DataFile.AddItem(MAPITEMTYPE_ENVELOPE, NumEnvelopes++, sizeof(CMapItemEnvelope_v2), &Item);
+		PointCount += Item.m_NumPoints;
+	}
+
+	// save points
+	int TotalSize = sizeof(CEnvPoint_v1) * PointCount;
+	unsigned char *pPoints = (unsigned char *)mem_alloc(TotalSize);
+	int Offset = 0;
+	for(auto &pEnv : m_apEnvelopes)
+	{
+		for(auto &pPoint : pEnv->m_apEnvPoints)
+		{
+			CEnvPoint_v1 Point;
+			Point.m_aValues[0] = f2fx(pPoint->m_aValues[0]);
+			Point.m_aValues[1] = f2fx(pPoint->m_aValues[1]);
+			Point.m_aValues[2] = f2fx(pPoint->m_aValues[2]);
+			Point.m_aValues[3] = f2fx(pPoint->m_aValues[3]);
+			Point.m_Curvetype = pPoint->m_Curvetype;
+			Point.m_Time = pPoint->m_Time;
+			mem_copy(pPoints + Offset, &Point, sizeof(CEnvPoint_v1));
+			Offset += sizeof(CEnvPoint_v1);
+		}
+	}
+
+	DataFile.AddItem(MAPITEMTYPE_ENVPOINTS, 0, TotalSize, pPoints);
+	mem_free(pPoints);
+
+	for(auto &pGroup : m_apGroups)
 	{
 		// add group
 		{
@@ -842,7 +942,7 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 			Item.m_OffsetX = pGroup->m_OffsetX;
 			Item.m_OffsetY = pGroup->m_OffsetY;
 			Item.m_StartLayer = NumLayers;
-			Item.m_NumLayers = (int) pGroup->m_vpLayers.size();
+			Item.m_NumLayers = (int) pGroup->m_apLayers.size();
 			Item.m_UseClipping = pGroup->m_UseClipping ? 1 : 0;
 			Item.m_ClipX = pGroup->m_ClipX;
 			Item.m_ClipY = pGroup->m_ClipY;
@@ -853,7 +953,7 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 			DataFile.AddItem(MAPITEMTYPE_GROUP, NumGroups++, sizeof(CMapItemGroup), &Item);
 		}
 
-		for(auto &pLayer : pGroup->m_vpLayers)
+		for(auto &pLayer : pGroup->m_apLayers)
 		{
 			if(pLayer->m_Type == ELayerType::TILES)
 			{
@@ -872,7 +972,7 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 				Item.m_Color.b = pTilemap->m_Color.b;
 				Item.m_Color.a = pTilemap->m_Color.a;
 
-				Item.m_ColorEnv = -1;
+				Item.m_ColorEnv = pTilemap->m_pColorEnv ? pTilemap->m_pColorEnv->m_EnvID : -1;
 				Item.m_ColorEnvOffset = 0;
 
 				Item.m_Width = pTilemap->m_Width;
@@ -899,10 +999,10 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 				Item.m_Layer.m_Type = LAYERTYPE_QUADS;
 
 				Item.m_Image = pQuads->m_pImage ? pQuads->m_pImage->m_ImageID : -1;
-				Item.m_NumQuads = pQuads->m_vpQuads.size();
+				Item.m_NumQuads = pQuads->m_apQuads.size();
 
 				std::vector<CQuad> vQuads;
-				for(auto &pOriginQuad : pQuads->m_vpQuads)
+				for(auto &pOriginQuad : pQuads->m_apQuads)
 				{
 					vQuads.push_back(CQuad());
 					CQuad *pQuad = &vQuads[vQuads.size() - 1];
@@ -924,10 +1024,10 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 					pQuad->m_aPoints[4].x = pOriginQuad->m_Pos.x;
 					pQuad->m_aPoints[4].y = pOriginQuad->m_Pos.y;
 
-					pQuad->m_ColorEnv = -1;
+					pQuad->m_ColorEnv = pOriginQuad->m_pColorEnv ? pOriginQuad->m_pColorEnv->m_EnvID : -1;
 					pQuad->m_ColorEnvOffset = 0;
 
-					pQuad->m_PosEnv = -1;
+					pQuad->m_PosEnv = pOriginQuad->m_pPosEnv ? pOriginQuad->m_pPosEnv->m_EnvID : -1;;
 					pQuad->m_PosEnvOffset = 0;
 				}
 

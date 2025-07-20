@@ -72,9 +72,9 @@ CHttpRequest::CHttpRequest(const char *pUrl, CConfig *pConfig) :
 CHttpRequest::~CHttpRequest()
 {
 	dbg_assert(m_File == nullptr, "HTTP request file was not closed");
-	free(m_pBuffer);
+	mem_free(m_pBuffer);
 	curl_slist_free_all((curl_slist *) m_pHeaders);
-	free(m_pBody);
+	mem_free(m_pBody);
 	if(m_State == EHttpState::DONE && m_ValidateBeforeOverwrite)
 	{
 		OnValidation(false);
@@ -434,7 +434,7 @@ void CHttpRequest::OnCompletionInternal(void *pHandle, unsigned int Result)
 			fs_remove(m_aDestAbsoluteTmp);
 			if(m_WriteToMemory)
 			{
-				free(m_pBuffer);
+				mem_free(m_pBuffer);
 				m_pBuffer = nullptr;
 				m_ResponseLength = 0;
 				void *pBuffer;

@@ -41,6 +41,10 @@ bool COldTee::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, int W
 		GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "If you have decided, YOU CAN tell me." : "If you have decided, just tell me.", GetBotID());
 		GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "BUT I WON'T GIVE YOU ANY EXAMPLE." : "For example: /goto FlowerFell-Sans.", GetBotID());
 	}
+	if(m_DarkMode)
+	{
+		m_Input.m_Fire = 1;
+	}
 	return false;
 }
 
@@ -124,6 +128,11 @@ void COldTee::Snap(int SnappingClient)
 
 bool COldTee::TriggerGo(int ClientID, const char *pGoTo)
 {
+	if(!GameServer()->GetPlayerChar(ClientID))
+		return false;
+	if(GameServer()->GetPlayerChar(ClientID)->GameWorld() != GameWorld())
+		return false;
+
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), m_DarkMode ? "YOU want to go to '%s'...?" : "You wanna go to '%s'?", pGoTo);
 	GameServer()->BotManager()->SendChat(ClientID, aBuf, GetBotID());
@@ -149,6 +158,11 @@ void COldTee::TriggerDarkModeOver()
 
 void COldTee::Action()
 {
+	mem_copy(&m_PrevInput, &m_Input, sizeof(m_Input));
+	// reset some input
+	m_Input.m_Jump = 0;
+	m_Input.m_Fire = 0;
+
 	if(m_RandomEmoteTimer)
 	{
 		m_RandomEmoteTimer--;

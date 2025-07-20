@@ -196,6 +196,17 @@ void CMapGen::GenerateGameLayer()
 			}
 		}
 	}
+
+	// Generate portal
+	ivec2 PortalPos;
+	do
+	{
+		PortalPos.x = random_int() % (MAP_WIDTH - 2) + 1;
+		PortalPos.y = random_int() % (MAP_HEIGHT - 2) + 1;
+	}
+	while(m_pGameTiles[PortalPos.y * MAP_WIDTH + PortalPos.x].m_Index == TILE_SOLID);
+
+	m_pGameTiles[PortalPos.y * MAP_WIDTH + PortalPos.x].m_Index = ENTITY_OFFSET + ENTITY_PORT_PORTAL;
 }
 
 void CMapGen::GenerateBackground()
@@ -322,6 +333,66 @@ void CMapGen::GenerateUnhookable(CMapGen *pParent)
 	pParent->m_pMapCreater->AutoMap(pParent->m_pUnhookableLayer, "Random Silver");
 }
 
+void CMapGen::UseDarkMode()
+{
+	SGroupInfo *pGroup = m_pMapCreater->AddGroup("Darksky");
+	pGroup->m_ParallaxX = 0;
+	pGroup->m_ParallaxY = 0;
+
+	SLayerQuads *pLayer = pGroup->AddQuadsLayer("Quads");
+	SEnvelope *pEnv = m_pMapCreater->AddEnvelope("Dark mode", EEnvType::Color, true);
+	{
+		SEnvPoint *pPoint = nullptr; 
+		{
+			pPoint = pEnv->AddEnvPoint(0, CURVETYPE_STEP);
+			pPoint->m_aValues[0] = 255.f / 255.f;
+			pPoint->m_aValues[1] = 255.f / 255.f;
+			pPoint->m_aValues[2] = 255.f / 255.f;
+			pPoint->m_aValues[3] = 0.f;
+		}
+		{
+			pPoint = pEnv->AddEnvPoint(6e5, CURVETYPE_SMOOTH);
+			pPoint->m_aValues[0] = 255.f / 255.f;
+			pPoint->m_aValues[1] = 255.f / 255.f;
+			pPoint->m_aValues[2] = 255.f / 255.f;
+			pPoint->m_aValues[3] = 0.f;
+		}
+		{
+			pPoint = pEnv->AddEnvPoint(6e5 + 10e3, CURVETYPE_SMOOTH);
+			pPoint->m_aValues[0] = 255.f / 255.f;
+			pPoint->m_aValues[1] = 255.f / 255.f;
+			pPoint->m_aValues[2] = 255.f / 255.f;
+			pPoint->m_aValues[3] = 255.f / 255.f;
+		}
+		{
+			pPoint = pEnv->AddEnvPoint(12e5 - 10e3, CURVETYPE_SMOOTH);
+			pPoint->m_aValues[0] = 255.f / 255.f;
+			pPoint->m_aValues[1] = 255.f / 255.f;
+			pPoint->m_aValues[2] = 255.f / 255.f;
+			pPoint->m_aValues[3] = 255.f / 255.f;
+		}
+		{
+			pPoint = pEnv->AddEnvPoint(12e5, CURVETYPE_SMOOTH);
+			pPoint->m_aValues[0] = 255.f / 255.f;
+			pPoint->m_aValues[1] = 255.f / 255.f;
+			pPoint->m_aValues[2] = 255.f / 255.f;
+			pPoint->m_aValues[3] = 0.f;
+		}
+	}
+	{
+		SQuad *pQuad = pLayer->AddQuad(vec2(0, 0), vec2(1600, 1200));
+		pQuad->m_aColors[0].r = pQuad->m_aColors[1].r = 128;
+		pQuad->m_aColors[0].g = pQuad->m_aColors[1].g = 0;
+		pQuad->m_aColors[0].b = pQuad->m_aColors[1].b = 0;
+		pQuad->m_aColors[0].a = pQuad->m_aColors[1].a = 155;
+		pQuad->m_aColors[2].r = pQuad->m_aColors[3].r = 128;
+		pQuad->m_aColors[2].g = pQuad->m_aColors[3].g = 0;
+		pQuad->m_aColors[2].b = pQuad->m_aColors[3].b = 0;
+		pQuad->m_aColors[2].a = pQuad->m_aColors[3].a = 155;
+		pQuad->m_pColorEnv = pEnv;
+	}
+}
+
 void CMapGen::GenerateMap(bool CreateCenter)
 {
 	// Generate background
@@ -363,7 +434,11 @@ void CMapGen::GenerateMap(bool CreateCenter)
 			}
 		}
 	}
-	m_pMapCreater->AddMiniMap();
+
+	// Append Dark Mode
+	UseDarkMode();
+
+	// m_pMapCreater->AddMiniMap();
 }
 
 bool CMapGen::CreateMap(const char *pFilename, bool CreateCenter)

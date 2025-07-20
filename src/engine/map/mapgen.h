@@ -21,6 +21,13 @@ class CMapGen
 	static void GenerateHookable(CMapGen *pParent);
 	static void GenerateUnhookable(CMapGen *pParent);
 
+	void GenerateBackground();
+	void GenerateGameLayer();
+	void GenerateDoodadsLayer();
+	void UseDarkMode();
+
+	void GenerateMap(bool CreateCenter);
+
 	Uuid m_MapUuid;
 
 public:
@@ -44,12 +51,6 @@ public:
 
 	IStorage *Storage() { return m_pStorage; };
 	IConsole *Console() { return m_pConsole; };
-
-	void GenerateBackground();
-	void GenerateGameLayer();
-	void GenerateDoodadsLayer();
-
-	void GenerateMap(bool CreateCenter);
 
 	CMapGen(IStorage *pStorage, IConsole *pConsole);
 	~CMapGen();

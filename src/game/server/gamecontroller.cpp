@@ -9,6 +9,7 @@
 #include "entities/botentity.h"
 #include "entities/character.h"
 #include "entities/pickup.h"
+#include "entities/portal.h"
 #include "gamecontext.h"
 #include "gamecontroller.h"
 #include "player.h"
@@ -176,6 +177,9 @@ bool CGameController::OnEntity(CGameWorld *pGameWorld, int Index, vec2 Pos)
 	case ENTITY_POWERUP_NINJA:
 		Type = PICKUP_NINJA;
 		break;
+	case ENTITY_PORT_PORTAL:
+		new CPortal(pGameWorld, Pos);
+		return true;
 	}
 
 	if(Type != -1)
@@ -319,6 +323,9 @@ void CGameController::Tick()
 		{
 			pWorld->TriggerDarkMode();
 		}
+		GameServer()->SendChatTarget(-1, "⚠ Experiencing severe signal interference ⚠");
+		GameServer()->SendChatTarget(-1, "⚠ Anomaly alert activated ⚠");
+		GameServer()->SendChatTarget(-1, "S.U.L.F.U.R. will protect your safety.");
 	}
 	else if((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) == 0)
 	{
@@ -362,14 +369,71 @@ bool CGameController::IsTeamChangeAllowed() const
 	return true;
 }
 
-bool CGameController::OnPlayerChat(int ClientID, const char *pMessage)
+bool CGameController::OnPlayerChat(int ClientID, const char *pMessage, char *pBuffer, int BufferSize)
 {
+	if(IsInDarkMode())
+	{
+		// special censor
+		int Length = 0;
+		const char *p = pMessage;
+		*pBuffer = 0;
+		while(*p)
+		{
+			int Code = str_utf8_decode(&p);
+
+			static const int s_aRandomCharacter[6] = {'*', '&', '.', '#', '%', '^'};
+			if(random_int() % 100 > 47)
+			{
+				char aEncoded[4];
+				int Size = str_utf8_encode(aEncoded, s_aRandomCharacter[random_int() % 6]);
+				aEncoded[Size] = 0;
+				str_append(pBuffer, aEncoded, BufferSize);
+				Length += Size;
+			}
+			else
+			{
+				char aEncoded[4];
+				int Size = str_utf8_encode(aEncoded, Code);
+				aEncoded[Size] = 0;
+				str_append(pBuffer, aEncoded, BufferSize);
+				Length += Size;
+			}
+
+			if(++Length >= BufferSize)
+			{
+				break;
+			}
+		}
+	}
+	else
+		str_copy(pBuffer, pMessage, BufferSize);
 	return true;
 }
 
 void CGameController::OnPlayerTeleport(int ClientID, const char *pString)
 {
+	if(str_comp(pString, "Void") == 0)
+		return;
 	GameServer()->BotManager()->m_pOldTee->TriggerGo(ClientID, pString);
+}
+
+void CGameController::OnPlayerDeathWhenDarkMode(int ClientID)
+{
+	int Time = 1200 - round_to_int((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) / Server()->TickSpeed());
+	// S.U.L.F.U.R. Scientific Unconventional Laboratory Field Unit Response 科学非常规现场调查局
+	char aBanMsg[128];
+	str_format(aBanMsg, sizeof(aBanMsg), "S.U.L.F.U.R. protected your safety.\nPlease re-execute the survey task after %d seconds", Time);
+	Server()->DoSpecialBan(ClientID, Time, aBanMsg);
+}
+
+void CGameController::OnPlayerSwitchMap(int ClientID, Uuid OldMapID, Uuid NewMapID)
+{
+	if(NewMapID == CalculateUuid("Void"))
+	{
+		char aMsg[128];
+		str_format(aMsg, sizeof(aMsg), "⚠ An investigator has lost in '%s'", Server()->GetMapName(OldMapID));
+		GameServer()->SendChatTarget(-1, aMsg);
+	}
 }
 
 void CGameController::SendGameInfo(int ClientID)
@@ -549,7 +613,7 @@ int CGameController::GetStartTeam()
 
 bool CGameController::IsInDarkMode() const
 {
-	return ((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) >= (610 * Server()->TickSpeed())) && ((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) <= (1190 * Server()->TickSpeed()));
+	return ((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) >= (610 * Server()->TickSpeed())) && ((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) <= (1200 * Server()->TickSpeed()));
 }
 
 void CGameController::RegisterChatCommands(CCommandManager *pManager)

@@ -75,6 +75,11 @@ public:
 
 	virtual void SwitchClientMap(int ClientID, Uuid MapID) = 0;
 	virtual void RequestNewWorld(int ClientID, const char *pWorldName) = 0;
+
+	virtual Uuid GetBaseMapUuid() const = 0;
+	virtual const char *GetMapName(Uuid MapID) = 0;
+
+	virtual void DoSpecialBan(int ClientID, int Time, const char *pBanMsg) = 0;
 };
 
 class IGameServer : public IInterface

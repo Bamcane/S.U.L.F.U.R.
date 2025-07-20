@@ -3,6 +3,7 @@
 #ifndef GAME_SERVER_GAMEWORLD_H
 #define GAME_SERVER_GAMEWORLD_H
 
+#include <base/uuid.h>
 #include <game/collision.h>
 #include <game/gamecore.h>
 
@@ -43,6 +44,7 @@ public:
 		ENTTYPE_CHARACTER,
 		ENTTYPE_FLAG,
 		ENTTYPE_BOTENTITY,
+		ENTTYPE_PORTAL,
 		NUM_ENTTYPES
 	};
 
@@ -74,6 +76,7 @@ public:
 
 	vec2 m_aaSpawnPoints[3][128];
 	unsigned m_aNumSpawnPoints[3];
+	Uuid m_WorldUuid;
 
 	void SetGameServer(CGameContext *pGameServer);
 

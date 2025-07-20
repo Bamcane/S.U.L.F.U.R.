@@ -208,5 +208,6 @@ inline int64 CmaskAllExceptOne(int ClientID) { return CmaskAll() ^ CmaskOne(Clie
 inline bool CmaskIsSet(int64 Mask, int ClientID) { return (Mask & CmaskOne(ClientID)) != 0; }
 
 int NetworkClipped(int SnappingClient, vec2 CheckPos, CGameContext *pGameServer, CGameWorld *pWorld);
+int NetworkClippedLine(int SnappingClient, vec2 CheckPos, vec2 CheckPos2, CGameContext *pGameServer, CGameWorld *pWorld);
 
 #endif // GAME_SERVER_GAMECONTEXT_H

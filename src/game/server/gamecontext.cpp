@@ -438,6 +438,8 @@ void CGameContext::SendVoteClearOptions(int ClientID)
 void CGameContext::SendTuningParams(int ClientID)
 {
 	CTuningParams Tuning = m_Tuning;
+	Tuning.m_PlayerCollision = 0;
+	Tuning.m_PlayerHooking = 0;
 	CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
 	int *pParams = (int *) &Tuning;
 	for(unsigned i = 0; i < sizeof(Tuning) / sizeof(int); i++)
@@ -835,6 +837,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			if(Mode != CHAT_NONE)
 			{
+				char aMsg[256] = {'\0'};
 				if(pMsg->m_pMessage[0] == '/')
 				{
 					const char *pCommandStr = pMsg->m_pMessage;
@@ -850,9 +853,9 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					// execute command
 					CommandManager()->OnCommand(pCommand->m_aName, str_skip_whitespaces_const(str_skip_to_whitespace_const(pCommandStr)), ClientID);
 				}
-				else if(GameController()->OnPlayerChat(ClientID, pMsg->m_pMessage))
+				else if(GameController()->OnPlayerChat(ClientID, pMsg->m_pMessage, aMsg, sizeof(aMsg)))
 				{
-					SendChat(ClientID, Mode, pMsg->m_Target, pMsg->m_pMessage);
+					SendChat(ClientID, Mode, pMsg->m_Target, aMsg);
 				}
 			}
 		}
@@ -1615,6 +1618,7 @@ void CGameContext::LoadNewWorld(Uuid WorldID)
 {
 	CGameWorld *pWorld = new CGameWorld();
 	pWorld->SetGameServer(this);
+	pWorld->m_WorldUuid = WorldID;
 
 	m_Layers.Init(Kernel());
 	pWorld->Collision()->Init(&m_Layers);
@@ -1644,7 +1648,10 @@ void CGameContext::LoadNewWorld(Uuid WorldID)
 void CGameContext::SwitchPlayerWorld(int ClientID, Uuid WorldID)
 {
 	if(m_apPlayers[ClientID])
+	{
+		GameController()->OnPlayerSwitchMap(ClientID, m_apPlayers[ClientID]->GameWorld()->m_WorldUuid, WorldID);
 		m_apPlayers[ClientID]->SwitchWorld(m_upWorlds[WorldID]);
+	}
 }
 
 void CGameContext::TeleportPlayerOutWorld(int ClientID, const char *pWorldName)
@@ -1676,4 +1683,14 @@ int NetworkClipped(int SnappingClient, vec2 CheckPos, CGameContext *pGameServer,
 		return 1;
 
 	return 0;
+}
+
+int NetworkClippedLine(int SnappingClient, vec2 CheckPos, vec2 CheckPos2, CGameContext *pGameServer, CGameWorld *pWorld)
+{
+	if(SnappingClient == -1)
+		return 0;
+	if(pGameServer->m_apPlayers[SnappingClient]->GameWorld() != pWorld)
+		return 1;
+	vec2 Point = closest_point_on_line(CheckPos, CheckPos2, pGameServer->m_apPlayers[SnappingClient]->m_ViewPos);
+	return NetworkClipped(SnappingClient, Point, pGameServer, pWorld);
 }

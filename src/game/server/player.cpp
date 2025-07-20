@@ -136,8 +136,16 @@ void CPlayer::PostTick()
 		// tele cancelled
 		else if(distance(m_LastViewPos, m_ViewPos) > 2.f)
 		{
-			GameServer()->SendChatTarget(m_ClientID, "Teleport request cancelled");
-			m_TeleportTimer = -1;
+			if(GameServer()->GameController()->IsInDarkMode())
+			{
+				KillCharacter();
+				return;
+			}
+			else
+			{
+				GameServer()->SendChatTarget(m_ClientID, "Teleport request cancelled");
+				m_TeleportTimer = -1;
+			}
 		}
 	}
 

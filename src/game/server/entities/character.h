@@ -109,8 +109,12 @@ private:
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
 
+	bool m_PortalFounded;
+	vec2 m_ClosetPortal;
+	void FindClosetPortal();
 public:
 	void SetPos(vec2 Pos, bool Reset = false);
+	int GetCID() const;
 };
 
 #endif // GAME_SERVER_ENTITIES_CHARACTER_H
