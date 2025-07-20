@@ -729,12 +729,6 @@ void CCharacter::Die(CEntity *pKiller, int Weapon)
 	CDamageEntity::Die(pKiller, Weapon);
 	GameWorld()->m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID(), CmaskAllInWorld());
-
-	if(GameServer()->GameController()->IsInDarkMode())
-	{
-		GameServer()->CreatePlayerSpawn(m_Pos, GameWorld()->CmaskAllInWorld());
-		GameServer()->GameController()->OnPlayerDeathWhenDarkMode(m_pPlayer->GetCID());
-	}
 }
 
 void CCharacter::Snap(int SnappingClient)
