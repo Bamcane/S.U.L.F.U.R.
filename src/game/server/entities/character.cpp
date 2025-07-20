@@ -630,6 +630,9 @@ bool CCharacter::IsFriendlyDamage(CEntity *pFrom)
 
 bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, int Weapon)
 {
+	if(!m_Alive)
+		return false;
+
 	m_Core.m_Vel += Force;
 	int Owner = -1;
 	if(pFrom && (pFrom->GetObjFlag() & EEntityFlag::ENTFLAG_OWNER))
@@ -730,6 +733,9 @@ void CCharacter::Die(CEntity *pKiller, int Weapon)
 
 void CCharacter::Snap(int SnappingClient)
 {
+	if(!m_Alive)
+		return;
+
 	if(NetworkClipped(SnappingClient))
 		return;
 
