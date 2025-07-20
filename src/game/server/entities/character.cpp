@@ -272,9 +272,6 @@ void CCharacter::FireWeapon()
 	{
 		GameServer()->CreateSound(m_Pos, SOUND_HAMMER_FIRE, CmaskAllInWorld());
 
-		if(GameServer()->GameController()->GetWeaponDamage(WEAPON_HAMMER, GameWorld()) == 0)
-			break;
-
 		CDamageEntity *apEnts[MAX_CHECK_ENTITY];
 		int Hits = 0;
 		int Num = GameWorld()->FindEntities(ProjStartPos, GetProximityRadius() * 0.5f, (CEntity **) apEnts,
@@ -627,6 +624,8 @@ bool CCharacter::IsFriendlyDamage(CEntity *pFrom)
 {
 	if(!pFrom)
 		return true;
+	if(GameWorld()->m_WorldUuid == Server()->GetBaseMapUuid())
+		return true;
 
 	return false;
 }
@@ -636,7 +635,6 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, in
 	if(!m_Alive)
 		return false;
 
-	m_Core.m_Vel += Force;
 	int Owner = -1;
 	if(pFrom && (pFrom->GetObjFlag() & EEntityFlag::ENTFLAG_OWNER))
 		Owner = ((COwnerEntity *) pFrom)->GetOwner();
@@ -644,8 +642,8 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, in
 	int OldHealth = m_Health, OldArmor = m_Armor;
 	bool Return = CDamageEntity::TakeDamage(Force, Source, Dmg, pFrom, Weapon);
 
-	if(Return == false)
-		return false;
+	if(Return == true)
+		m_Core.m_Vel += Force;
 
 	// create healthmod indicator
 	GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), Source, OldHealth - m_Health, OldArmor - m_Armor, pFrom == this, GameWorld()->CmaskAllInWorld());

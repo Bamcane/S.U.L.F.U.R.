@@ -615,8 +615,6 @@ int CGameController::GetStartTeam()
 
 int CGameController::GetWeaponDamage(int WeaponID, Uuid WorldID)
 {
-	if(WorldID == Server()->GetBaseMapUuid() && !IsInDarkMode())
-		return 0;
 	switch(WeaponID)
 	{
 	case WEAPON_HAMMER: return g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage;
