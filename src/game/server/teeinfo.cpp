@@ -41,8 +41,7 @@ void ReadInfoByJson(IStorage *pStorage, const char *pSkinName, STeeInfo &TeeInfo
 	const json_value *pJsonData = JsonParser.ParseFile(aBuf, pStorage);
 	if(pJsonData == 0)
 	{
-		str_format(aBuf, sizeof(aBuf), "failed to load skin '%s': %s", pSkinName, JsonParser.Error());
-		dbg_msg("skins", aBuf);
+		dbg_msg("skins", "failed to load skin '%s': %s", pSkinName, JsonParser.Error());
 		return;
 	}
 
