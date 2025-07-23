@@ -16,8 +16,8 @@
 #define MAP_CHUNK_WIDTH 12
 #define MAP_CHUNK_HEIGHT 12
 #define CHUNK_SIZE 32
-#define MAP_WIDTH CHUNK_SIZE *MAP_CHUNK_WIDTH
-#define MAP_HEIGHT CHUNK_SIZE *MAP_CHUNK_HEIGHT
+#define MAP_WIDTH CHUNK_SIZE * MAP_CHUNK_WIDTH
+#define MAP_HEIGHT CHUNK_SIZE * MAP_CHUNK_HEIGHT
 #define ISLAND_THRESHOLD 0.3f
 #define STONE_THRESHOLD 0.95f
 #define DIRT_THRESHOLD 0.3f
@@ -432,6 +432,13 @@ void CMapGen::GenerateMap(bool CreateCenter)
 				m_pGameTiles[y * MAP_HEIGHT + x].m_Index = TILE_NOHOOK;
 			}
 		}
+	}
+
+	if(m_MapUuid == CalculateUuid("Old Tee"))
+	{
+		SLayerQuads *pLayer = m_pMapCreater->AddGroup("Text")->AddQuadsLayer("Text");
+		pLayer->m_pImage = m_pMapCreater->AddEmbeddedImage("old_tee");
+		pLayer->AddQuad(vec2(MAP_WIDTH * 16.f, MAP_HEIGHT * 16.f), vec2(1024.f, 640.f));
 	}
 
 	// Append Dark Mode

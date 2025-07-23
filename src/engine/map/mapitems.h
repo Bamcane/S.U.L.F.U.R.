@@ -3,6 +3,7 @@
 
 #include <base/color.h>
 #include <base/tl/array.h>
+#include <base/tl/string.h>
 
 #include <game/mapitems.h>
 
@@ -85,7 +86,7 @@ struct SText
 {
 	ivec2 m_Pos;
 
-	char m_aText[32];
+	string m_Text;
 
 	int m_Size;
 	bool m_Outline;

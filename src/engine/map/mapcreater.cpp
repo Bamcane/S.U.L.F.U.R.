@@ -526,7 +526,7 @@ SText *SLayerText::AddText(const char *pText, int Size, ivec2 Pos, bool Outline,
 
 	s_TextMutex.unlock();
 
-	str_copy(pTextObj->m_aText, pText, sizeof(pTextObj->m_aText));
+	pTextObj->m_Text = pText;
 	pTextObj->m_Size = Size;
 	pTextObj->m_Pos = Pos;
 	pTextObj->m_Outline = Outline;
@@ -572,7 +572,7 @@ void CMapCreater::GenerateQuadsFromTextLayer(SLayerText *pText, array<CQuad> &vp
 		int MaxHeight = 0;
 		int MaxWidth = 0;
 
-		for(int Step = 0; Step < 2; Step++) // 0 = get width, 1 = render
+		for(int Step = 0; Step < 2; Step++) // 0 = get width + height, 1 = render
 		{
 			if(Step == 0 && !pText->m_Center)
 				continue;
@@ -580,7 +580,7 @@ void CMapCreater::GenerateQuadsFromTextLayer(SLayerText *pText, array<CQuad> &vp
 			ivec2 Beginning = pText->m_Pos;
 			ivec2 Pos = Beginning;
 
-			const char *pTextStr = pText->m_aText;
+			const char *pTextStr = pText->m_Text;
 			int Char;
 
 			while((Char = str_utf8_decode(&pTextStr)) > 0)

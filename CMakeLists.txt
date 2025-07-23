@@ -494,6 +494,7 @@ set(EXPECTED_DATA
   mapres/light.png
   mapres/moon.png
   mapres/mountains.png
+  mapres/old_tee.png
   mapres/snow.png
   mapres/stars.png
   mapres/sun.png
