@@ -197,13 +197,16 @@ void CMapGen::GenerateGameLayer()
 		}
 	}
 
+	int32_t IntSeed;
+	mem_copy(&IntSeed, &m_MapUuid.m_aData[12], sizeof(IntSeed));
+	srand(IntSeed);
 	// Generate portal
 	ivec2 PortalPos;
 	do
 	{
 		PortalPos.x = random_int() % (MAP_WIDTH - 2) + 1;
 		PortalPos.y = random_int() % (MAP_HEIGHT - 2) + 1;
-	} while(m_pGameTiles[PortalPos.y * MAP_WIDTH + PortalPos.x].m_Index == TILE_SOLID);
+	} while(m_pGameTiles[PortalPos.y * MAP_WIDTH + PortalPos.x].m_Index != TILE_AIR);
 
 	m_pGameTiles[PortalPos.y * MAP_WIDTH + PortalPos.x].m_Index = ENTITY_OFFSET + ENTITY_PORT_PORTAL;
 }
