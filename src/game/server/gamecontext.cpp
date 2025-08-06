@@ -1657,6 +1657,9 @@ void CGameContext::SwitchPlayerWorld(int ClientID, Uuid WorldID)
 
 void CGameContext::TeleportPlayerOutWorld(int ClientID, const char *pWorldName)
 {
+	if(str_comp(pWorldName, "xX_ajdo_Xx") == 0)
+		pWorldName = "Majdom";
+
 	Uuid WorldID = CalculateUuid(pWorldName);
 	SendChatTarget(ClientID, "Your request is received!");
 	if(!m_upWorlds.count(WorldID))
