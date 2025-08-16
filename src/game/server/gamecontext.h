@@ -65,6 +65,7 @@ class CGameContext : public IGameServer
 	static void RemoveCommandHook(const CCommandManager::CCommand *pCommand, void *pContext);
 
 	static void ComGoto(IConsole::IResult *pResult, void *pUserData);
+	static void ComRead(IConsole::IResult *pResult, void *pUserData);
 
 	CGameContext(int Resetting);
 	void Construct(int Resetting);

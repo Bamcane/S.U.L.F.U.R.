@@ -1468,6 +1468,14 @@ void CGameContext::ComGoto(IConsole::IResult *pResult, void *pContext)
 	pSelf->GameController()->OnPlayerTeleport(pComContext->m_ClientID, pResult->GetString(0));
 }
 
+void CGameContext::ComRead(IConsole::IResult *pResult, void *pContext)
+{
+	CCommandManager::SCommandContext *pComContext = (CCommandManager::SCommandContext *) pContext;
+	CGameContext *pSelf = (CGameContext *) pComContext->m_pContext;
+
+	pSelf->BotManager()->ReadNote(pComContext->m_ClientID);
+}
+
 void CGameContext::OnInit()
 {
 	// init everything
@@ -1498,6 +1506,7 @@ void CGameContext::OnInit()
 	Console()->Chain("sv_max_clients", ConchainSettingUpdate, this);
 
 	CommandManager()->AddCommand("goto", "Go to any where you want to", "r[text]", ComGoto, this);
+	CommandManager()->AddCommand("read", "Read something", "", ComRead, this);
 #ifdef CONF_DEBUG
 	// clamp dbg_dummies to 0..MAX_CLIENTS-1
 	if(MAX_CLIENTS <= Config()->m_DbgDummies)

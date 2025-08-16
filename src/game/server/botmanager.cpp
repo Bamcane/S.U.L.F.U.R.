@@ -1,5 +1,6 @@
 #include <engine/shared/config.h>
 
+#include <game/server/entities/bodyoftee.h>
 #include <game/server/entities/botentity.h>
 #include <game/server/entities/oldtee.h>
 
@@ -255,6 +256,41 @@ void CBotManager::SendChat(int To, const char *pChat, Uuid BotID)
 
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
 	}
+}
+
+void CBotManager::ReadNote(int ClientID)
+{
+	const char *pMessage = nullptr;
+	for(auto &[BotID, pBot] : m_vpBots)
+	{
+		pBot->TriggerRead(ClientID, &pMessage);
+		if(pMessage)
+			break;
+	}
+	if(!pMessage)
+	{
+		GameServer()->SendChatTarget(ClientID, "Couldn't find anything to read");
+	}
+	else
+	{
+		CNetMsg_Sv_Motd Msg;
+		Msg.m_pMessage = pMessage;
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	}
+}
+
+void CBotManager::CreateBodyOfTee(CGameWorld *pWorld, vec2 Pos)
+{
+	// find first free bot id
+	Uuid FreeID = RandomUuid();
+	for(; m_vpBots.count(FreeID); FreeID = RandomUuid()) {}
+
+	CBotEntity *pBot = new CBodyOfTee(pWorld, Pos, FreeID);
+	pBot->SetMaxHealth(1);
+	pBot->SetMaxArmor(1);
+	pBot->IncreaseHealth(1);
+	pBot->IncreaseArmor(1);
+	m_vpBots[FreeID] = pBot;
 }
 
 void CBotManager::CreateDamage(vec2 Pos, Uuid BotID, vec2 Source, int HealthAmount, int ArmorAmount, bool Self)

@@ -40,6 +40,8 @@ public:
 
 	void Tick();
 
+	void ReadNote(int ClientID);
+	void CreateBodyOfTee(CGameWorld *pWorld, vec2 Pos);
 	void CreateDamage(vec2 Pos, Uuid BotID, vec2 Source, int HealthAmount, int ArmorAmount, bool Self);
 	void CreateDeath(vec2 Pos, Uuid BotID);
 	void SendEmoticon(int Emoticon, Uuid BotID);

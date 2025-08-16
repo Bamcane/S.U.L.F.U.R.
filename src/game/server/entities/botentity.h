@@ -30,6 +30,7 @@ public:
 	virtual const char *GetName() { return ""; }
 
 	virtual bool TriggerGo(int ClientID, const char *pGoTo) { return false; }
+	virtual void TriggerRead(int ClientID, const char **ppMessage) {}
 
 protected:
 	STeeInfo m_TeeInfos;

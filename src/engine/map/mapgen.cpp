@@ -190,9 +190,14 @@ void CMapGen::GenerateGameLayer()
 	{
 		for(int y = 1; y < MAP_HEIGHT - 1; y++)
 		{
-			if(m_pGameTiles[y * MAP_WIDTH + x].m_Index == TILE_AIR && m_pGameTiles[(y + 1) * MAP_WIDTH + x].m_Index == TILE_SOLID && random_int() % 100 < 13)
+			if(m_pGameTiles[y * MAP_WIDTH + x].m_Index == TILE_AIR && m_pGameTiles[(y + 1) * MAP_WIDTH + x].m_Index == TILE_SOLID)
 			{
-				m_pGameTiles[y * MAP_WIDTH + x].m_Index = ENTITY_OFFSET + 1 + random_int() % ENTITY_SPAWN_BLUE;
+				if(random_int() % 100 < 13)
+					m_pGameTiles[y * MAP_WIDTH + x].m_Index = ENTITY_OFFSET + 1 + random_int() % ENTITY_SPAWN_BLUE;
+				else if(random_int() % 100 < 3)
+					m_pGameTiles[y * MAP_WIDTH + x].m_Index = ENTITY_OFFSET + ENTITY_ARMOR_1 + random_int() % (ENTITY_WEAPON_LASER - ENTITY_ARMOR_1 + 1);
+				else if(random_int() % 100 < 2)
+					m_pGameTiles[y * MAP_WIDTH + x].m_Index = ENTITY_OFFSET + ENTITY_BODY_OF_TEE;
 			}
 		}
 	}

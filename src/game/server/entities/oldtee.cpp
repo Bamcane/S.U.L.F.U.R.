@@ -19,7 +19,7 @@ COldTee::COldTee(CGameWorld *pWorld, vec2 Pos, Uuid BotID, STeeInfo TeeInfo) :
 	ReadInfoByJson(GameServer()->Storage(), "c29z_dark", m_DarkInfo);
 
 	m_DarkMode = false;
-	m_TeeInfos = m_DarkMode ? m_DarkInfo : m_LightInfo;
+	m_TeeInfos = m_DarkInfo;
 
 	m_Emote = EMOTE_NORMAL;
 	m_RandomEmoteTimer = random_int() % 500 + 500;
@@ -35,9 +35,21 @@ bool COldTee::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, int W
 	if(pFrom->GetObjType() == CGameWorld::ENTTYPE_CHARACTER && Weapon == WEAPON_HAMMER)
 	{
 		int ClientID = ((CCharacter *) pFrom)->GetPlayer()->GetCID();
-		GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "Where do YOU want to go?" : "Where do you want to go?", GetBotID());
-		GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "If you have decided, YOU CAN tell me." : "If you have decided, just tell me.", GetBotID());
-		GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "BUT I WON'T GIVE YOU ANY EXAMPLE." : "For example: /goto FlowerFell-Sans.", GetBotID());
+		if(random_int() % 100 < 12)
+		{
+			GameServer()->BotManager()->SendChat(ClientID, "You asked my skin?", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, "Some investigators thought my skin was too scary, so I changed it", GetBotID());
+		}
+		else if(random_int() % 100 < 12 && m_DarkMode)
+		{
+			GameServer()->BotManager()->SendChat(ClientID, "Congratulations, our in-game chat has been fixed", GetBotID());
+		}
+		else
+		{
+			GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "Some new tasks are ahead of you" : "Where do you want to go?", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "If you have decided to finish them, just tell me." : "If you have decided, just tell me.", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "Hope you come back soon." : "For example: /goto FlowerFell-Sans.", GetBotID());
+		}
 	}
 	if(m_DarkMode)
 	{
@@ -48,7 +60,7 @@ bool COldTee::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, int W
 
 const char *COldTee::GetName()
 {
-	return m_DarkMode ? "c29z" : "Old Tee";
+	return "c29z";
 }
 
 void COldTee::Snap(int SnappingClient)
@@ -132,10 +144,10 @@ bool COldTee::TriggerGo(int ClientID, const char *pGoTo)
 		return false;
 
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), m_DarkMode ? "YOU want to go to '%s'...?" : "You wanna go to '%s'?", pGoTo);
+	str_format(aBuf, sizeof(aBuf), m_DarkMode ? "You want to go to '%s'...?" : "You wanna go to '%s'?", pGoTo);
 	GameServer()->BotManager()->SendChat(ClientID, aBuf, GetBotID());
-	GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "That's a hell..." : "It's quite a good place.", GetBotID());
-	GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "SWYgeW91IGRvbid0IHdhbnQgdG8gRElFLCBZT1UgU0hPVUxETidUIE1PVkUu" : "Don't move in 3s if you are sure that is you want to go!", GetBotID());
+	GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "OK..." : "It's quite a good place, at least now", GetBotID());
+	GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "Hope you come back soon." : "Don't move in 3s if you are sure that is you want to go!", GetBotID());
 	GameServer()->m_apPlayers[ClientID]->TeleTo(pGoTo);
 	return true;
 }
@@ -143,15 +155,13 @@ bool COldTee::TriggerGo(int ClientID, const char *pGoTo)
 void COldTee::TriggerDarkMode()
 {
 	m_DarkMode = true;
-	m_TeeInfos = m_DarkInfo;
-	GameServer()->BotManager()->RequestRefreshMap(GetBotID());
+	GameServer()->BotManager()->RequestRefreshMap(m_BotID);
 }
 
 void COldTee::TriggerDarkModeOver()
 {
 	m_DarkMode = false;
-	m_TeeInfos = m_LightInfo;
-	GameServer()->BotManager()->RequestRefreshMap(GetBotID());
+	GameServer()->BotManager()->RequestRefreshMap(m_BotID);
 }
 
 void COldTee::Action()
@@ -168,7 +178,7 @@ void COldTee::Action()
 		{
 			m_RandomEmoteTimer = random_int() % 500 + 500;
 			GameServer()->BotManager()->SendEmoticon(random_int() % NUM_EMOTICONS, GetBotID());
-			GameServer()->BotManager()->SendChat(-1, m_DarkMode ? "V2h5IGRvIFlPVSBsZWF2ZSBtZSBBTE9ORS4uLi4u" : "Ahh....So strange...", GetBotID());
+			GameServer()->BotManager()->SendChat(-1, m_DarkMode ? "Finally..." : "Ahh....So strange...", GetBotID());
 		}
 	}
 }

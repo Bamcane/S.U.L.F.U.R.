@@ -751,6 +751,8 @@ set_src(GAME_SERVER GLOB_RECURSE src/game/server
   alloc.h
   botmanager.cpp
   botmanager.h
+  entities/bodyoftee.cpp
+  entities/bodyoftee.h
   entities/botentity.cpp
   entities/botentity.h
   entities/character.cpp

@@ -24,9 +24,9 @@
 		"eyes": {
 			"name": "negative",
 			"custom_colors": true,
-			"hue": 0,
+			"hue": 255,
 			"sat": 255,
-			"lgt": 0
+			"lgt": 255
 		}
 	}
 }

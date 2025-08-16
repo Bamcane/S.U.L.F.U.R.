@@ -182,6 +182,9 @@ bool CGameController::OnEntity(CGameWorld *pGameWorld, int Index, vec2 Pos)
 	case ENTITY_PORT_PORTAL:
 		new CPortal(pGameWorld, Pos);
 		return true;
+	case ENTITY_BODY_OF_TEE:
+		GameServer()->BotManager()->CreateBodyOfTee(pGameWorld, Pos);
+		return true;
 	}
 
 	if(Type != -1)
