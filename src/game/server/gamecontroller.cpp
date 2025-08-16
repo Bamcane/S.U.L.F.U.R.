@@ -387,7 +387,7 @@ bool CGameController::OnPlayerChat(int ClientID, const char *pMessage, char *pBu
 			int Code = str_utf8_decode(&p);
 
 			static const int s_aRandomCharacter[6] = {'*', '&', '.', '#', '%', '^'};
-			if(random_int() % 100 > 47)
+			if(random_int() % 100 > 90)
 			{
 				char aEncoded[4];
 				int Size = str_utf8_encode(aEncoded, s_aRandomCharacter[random_int() % 6]);
