@@ -118,7 +118,7 @@ void CBodyOfTee::TriggerRead(int ClientID, const char **ppMessage)
 	CCharacter *pChr = GameServer()->m_apPlayers[ClientID]->GetCharacter();
 	if(distance(pChr->GetPos(), m_Pos) > GetProximityRadius() * 1.75f)
 		return;
-	unsigned char NoteType = m_BotID.m_aData[2] % 8;
+	unsigned char NoteType = m_BotID.m_aData[2] % 9;
 	switch (NoteType)
 	{
 		case 0: *ppMessage = "I saw it.\nIt is attacking my defense shield\nI'm writing this note in hurry.\nIf any investigator read this,\nremember that, S.U.L.F"; break;
@@ -129,6 +129,7 @@ void CBodyOfTee::TriggerRead(int ClientID, const char **ppMessage)
 		case 5: *ppMessage = "I'm not fine.\nI can't sense anything."; break;
 		case 6: *ppMessage = "c29z said that I was glad to do my work before.\nBut I feel boring now. That's quite weird."; break;
 		case 7: *ppMessage = "I guess you have known that, its name is Majd (there are some weird characters on the note)"; break;
+		case 8: *ppMessage = "Deflate compression algorithm is great."; break;
 	}
 }
 
