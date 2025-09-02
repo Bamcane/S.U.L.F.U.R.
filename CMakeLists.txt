@@ -294,7 +294,7 @@ find_package(Freetype)
 find_package(Git)
 find_package(GTest)
 find_package(Threads)
-find_package(PNG)
+find_package(Pnglite)
 find_package(Curl)
 
 
@@ -344,15 +344,12 @@ if(TARGET_OS AND TARGET_OS STREQUAL "mac")
   show_dependency_status("Hdiutil" HDIUTIL)
 endif()
 show_dependency_status("OpenSSL Crypto" CRYPTO)
-show_dependency_status("LibPNG" PNG)
+show_dependency_status("Pnglite" PNGLITE)
 show_dependency_status("Python3" Python3)
 show_dependency_status("Zlib" ZLIB)
 
 if(NOT(FREETYPE_FOUND))
   message(SEND_ERROR "You must install Freetype to compile Teeworlds")
-endif()
-if(NOT(PNG_FOUND))
-  message(SEND_ERROR "You must install libpng to compile Teeworlds")
 endif()
 if(NOT(CURL_FOUND))
   message(SEND_ERROR "You must install Curl to compile Teeworlds")
@@ -629,12 +626,6 @@ set_src(ENGINE_INTERFACE GLOB src/engine
   server.h
   storage.h
 )
-set_src(ENGINE_GFX GLOB src/engine/gfx
-  image_loader.cpp
-  image_loader.h
-  image_manipulation.cpp
-  image_manipulation.h
-)
 set_src(ENGINE_MAP GLOB src/engine/map
   auto_map.cpp
   auto_map.h
@@ -718,21 +709,21 @@ set(GAME_GENERATED_SHARED
   src/generated/protocol.h
 )
 
-set(DEPS ${DEP_JSON} ${DEP_MD5} ${ZLIB_DEP})
+set(DEPS ${PNGLITE_DEP} ${DEP_JSON} ${DEP_MD5} ${ZLIB_DEP})
 
 # Libraries
 set(LIBS 
   ${CMAKE_THREAD_LIBS_INIT}
   ${ZLIB_LIBRARIES}
   ${CRYPTO_LIBRARIES} 
-  ${PNG_LIBRARIES}
+  ${PNGLITE_LIBRARIES}
   ${FREETYPE_LIBRARIES}
   ${CURL_LIBRARIES}
   ${PLATFORM_LIBS}
 )
 
 # Targets
-add_library(engine-shared EXCLUDE_FROM_ALL OBJECT ${ENGINE_INTERFACE} ${ENGINE_GFX} ${ENGINE_MAP} ${ENGINE_SHARED} ${ENGINE_GENERATED_SHARED} ${BASE})
+add_library(engine-shared EXCLUDE_FROM_ALL OBJECT ${ENGINE_INTERFACE} ${ENGINE_MAP} ${ENGINE_SHARED} ${ENGINE_GENERATED_SHARED} ${BASE})
 add_library(game-shared EXCLUDE_FROM_ALL OBJECT ${GAME_SHARED} ${GAME_GENERATED_SHARED})
 list(APPEND TARGETS_OWN engine-shared game-shared)
 
@@ -1174,7 +1165,7 @@ foreach(target ${TARGETS_OWN})
     target_include_directories(${target} PRIVATE ${CRYPTO_INCLUDE_DIRS})
   endif()
   target_include_directories(${target} PRIVATE ${FREETYPE_INCLUDE_DIRS})
-  target_include_directories(${target} PRIVATE ${PNG_INCLUDE_DIRS})
+  target_include_directories(${target} PRIVATE ${PNGLITE_INCLUDE_DIRS})
 endforeach()
 
 foreach(target ${TARGETS_DEP})

@@ -11,8 +11,7 @@
 #include <game/layers.h>
 #include <game/mapitems.h>
 
-#include <engine/gfx/image_loader.h>
-
+#include <engine/external/pnglite/pnglite.h>
 #include <base/color.h>
 
 // sync for std::thread
@@ -31,55 +30,50 @@ void FreePNG(CImageInfo *pImg)
 
 int LoadPNG(CImageInfo *pImg, IStorage *pStorage, const char *pFilename)
 {
-	IOHANDLE File = pStorage->OpenFile(pFilename, IOFLAG_READ, IStorage::TYPE_ALL);
-	if(File)
-	{
-		io_seek(File, 0, IOSEEK_END);
-		unsigned int FileSize = io_tell(File);
-		io_seek(File, 0, IOSEEK_START);
-
-		TImageByteBuffer ByteBuffer;
-		SImageByteBuffer ImageByteBuffer(&ByteBuffer);
-
-		ByteBuffer.resize(FileSize);
-		io_read(File, &ByteBuffer.front(), FileSize);
-
-		io_close(File);
-
-		uint8_t *pImgBuffer = NULL;
-		EImageFormat ImageFormat;
-		int PngliteIncompatible;
-		if(::LoadPNG(ImageByteBuffer, pFilename, PngliteIncompatible, pImg->m_Width, pImg->m_Height, pImgBuffer, ImageFormat))
-		{
-			pImg->m_pData = pImgBuffer;
-
-			if(ImageFormat == IMAGE_FORMAT_RGB) // ignore_convention
-				pImg->m_Format = CImageInfo::FORMAT_RGB;
-			else if(ImageFormat == IMAGE_FORMAT_RGBA) // ignore_convention
-				pImg->m_Format = CImageInfo::FORMAT_RGBA;
-			else
-			{
-				mem_free(pImgBuffer);
-				return 0;
-			}
-
-			if(PngliteIncompatible != 0)
-			{
-				dbg_msg("game/png", "\"%s\" is not compatible with pnglite and cannot be loaded by old DDNet versions: ", pFilename);
-			}
-		}
-		else
-		{
-			dbg_msg("game/png", "image had unsupported image format. filename='%s'", pFilename);
-			return 0;
-		}
-	}
-	else
+	// open file for reading
+	char aCompleteFilename[IO_MAX_PATH_LENGTH];
+	IOHANDLE File = pStorage->OpenFile(pFilename, IOFLAG_READ, IStorage::TYPE_ALL, aCompleteFilename, sizeof(aCompleteFilename));
+	if(!File)
 	{
 		dbg_msg("game/png", "failed to open file. filename='%s'", pFilename);
 		return 0;
 	}
 
+	png_init(0, 0);
+	png_t Png;
+	int Error = png_open_read(&Png, 0, File);
+	if(Error != PNG_NO_ERROR)
+	{
+		dbg_msg("game/png", "failed to read file. filename='%s'", aCompleteFilename);
+		io_close(File);
+		return 0;
+	}
+
+	if(Png.depth != 8 || Png.width > (2 << 12) || Png.height > (2 << 12))
+	{
+		dbg_msg("game/png", "invalid format. filename='%s'", aCompleteFilename);
+		io_close(File);
+		return 0;
+	}
+
+	if(Png.color_type == PNG_TRUECOLOR)
+		pImg->m_Format = CImageInfo::FORMAT_RGB;
+	else if(Png.color_type == PNG_TRUECOLOR_ALPHA)
+		pImg->m_Format = CImageInfo::FORMAT_RGBA;
+	else
+	{
+		dbg_msg("game/png", "invalid format. filename='%s'", aCompleteFilename);
+		io_close(File);
+		return 0;
+	}
+
+	unsigned char *pBuffer = (unsigned char *) mem_alloc(Png.width * Png.height * Png.bpp);
+	png_get_data(&Png, pBuffer);
+	io_close(File);
+
+	pImg->m_Width = Png.width;
+	pImg->m_Height = Png.height;
+	pImg->m_pData = pBuffer;
 	return 1;
 }
 
@@ -1001,11 +995,11 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 				Item.m_Image = pQuads->m_pImage ? pQuads->m_pImage->m_ImageID : -1;
 				Item.m_NumQuads = pQuads->m_apQuads.size();
 
-				std::vector<CQuad> vQuads;
+				array<CQuad> aQuads;
 				for(auto &pOriginQuad : pQuads->m_apQuads)
 				{
-					vQuads.push_back(CQuad());
-					CQuad *pQuad = &vQuads[vQuads.size() - 1];
+					aQuads.add(CQuad());
+					CQuad *pQuad = &aQuads[aQuads.size() - 1];
 
 					for(int i = 0; i < 4; i++)
 					{
@@ -1033,7 +1027,7 @@ bool CMapCreater::SaveMap(EMapType MapType, const char *pMap)
 				}
 
 				StrToInts(Item.m_aName, sizeof(Item.m_aName) / sizeof(int), pQuads->m_aName);
-				Item.m_Data = DataFile.AddDataSwapped((int) vQuads.size() * sizeof(CQuad), vQuads.data());
+				Item.m_Data = DataFile.AddDataSwapped(aQuads.size() * sizeof(CQuad), aQuads.base_ptr());
 
 				DataFile.AddItem(MAPITEMTYPE_LAYER, NumLayers++, sizeof(CMapItemLayerQuads), &Item);
 			}
