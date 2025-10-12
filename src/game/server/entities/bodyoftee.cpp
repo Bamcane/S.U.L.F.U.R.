@@ -118,7 +118,8 @@ static const char *s_pMessage[] = {
 	"That's not useful",
 	"Give up",
 	"我还不能放弃...c29z博士还在等着...",
-	"Password is....ELECTROLYSIS16"
+	"Password is....ELECTROLYSIS16",
+	"ep.teeworlds.wiki"
 };
 void CBodyOfTee::TriggerRead(int ClientID, const char **ppMessage)
 {
