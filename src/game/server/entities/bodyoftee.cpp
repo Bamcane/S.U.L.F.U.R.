@@ -10,6 +10,8 @@
 #include "character.h"
 #include "bodyoftee.h"
 
+#include <algorithm>
+
 // also c29z
 CBodyOfTee::CBodyOfTee(CGameWorld *pWorld, vec2 Pos, Uuid BotID) :
 	CBotEntity(pWorld, Pos, BotID, GenerateRandomSkin())
@@ -30,11 +32,11 @@ bool CBodyOfTee::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, in
 		unsigned char Type = m_BotID.m_aData[0] % 5;
 		switch (Type)
 		{
-			case 0: GameServer()->SendChatTarget(ClientID, (m_BotID.m_aData[1] % 2) ? "She has been dead" : "He has been dead...."); break;
-			case 1: GameServer()->SendChatTarget(ClientID, "Quite scary..."); break;
-			case 2: GameServer()->SendChatTarget(ClientID, "Why?..."); break;
-			case 3: GameServer()->SendChatTarget(ClientID, (m_BotID.m_aData[1] % 2) ? "Who killed her?..." : "Who killed him?..."); break;
-			case 4: GameServer()->SendChatTarget(ClientID, "Oh, there is a note, read it (/read)?...");
+			case 0: GameServer()->SendChatTarget(ClientID, (m_BotID.m_aData[1] % 2) ? "她已经死了" : "他已经死了"); break;
+			case 1: GameServer()->SendChatTarget(ClientID, "毛骨悚然..."); break;
+			case 2: GameServer()->SendChatTarget(ClientID, "为什么..."); break;
+			case 3: GameServer()->SendChatTarget(ClientID, (m_BotID.m_aData[1] % 2) ? "谁杀了她?..." : "谁杀了他?..."); break;
+			case 4: GameServer()->SendChatTarget(ClientID, "找到了一篇笔记，读它么?(输入/read)");
 		}
 	}
 	return false;
@@ -107,6 +109,16 @@ void CBodyOfTee::Snap(int SnappingClient)
 	}
 }
 
+static const char *s_pMessage[] = {
+	"S.U.L.F.U.R.\n暂无发现任何异常，除了似乎我看见了一个激光笼子",
+	"c29z说我最近有些消极\n呃啊，医院也没什么检查出来的问题\n我也不知道怎么办好\n脑子烧成一团了\n我到底要去哪",
+	"这里的地形黑成了一片，似乎是Port的反色版本\n但是这里没有z92c\n不过我好像看见个什么东西...?",
+	"E8BF99E79C9FE79A84E69C89E6848FE4B989E4B988",
+	"-..----.--..... -..---.---.--.. ---.---...----- ---.--.-....-.. -.......------.- -.-...------.-- -...--.-..-..-.- --...-....-...- -..---..-..-...",
+	"That's not useful",
+	"Give up",
+	"我还不能放弃...c29z博士还在等着..."
+};
 void CBodyOfTee::TriggerRead(int ClientID, const char **ppMessage)
 {
 	if((m_BotID.m_aData[0] % 5) != 4)
@@ -118,19 +130,8 @@ void CBodyOfTee::TriggerRead(int ClientID, const char **ppMessage)
 	CCharacter *pChr = GameServer()->m_apPlayers[ClientID]->GetCharacter();
 	if(distance(pChr->GetPos(), m_Pos) > GetProximityRadius() * 1.75f)
 		return;
-	unsigned char NoteType = m_BotID.m_aData[2] % 9;
-	switch (NoteType)
-	{
-		case 0: *ppMessage = "I saw it.\nIt is attacking my defense shield\nI'm writing this note in hurry.\nIf any investigator read this,\nremember that, S.U.L.F"; break;
-		case 1: *ppMessage = "If I could go back,\nI must play the 'InfClass' after work\nSadly, I'm here to face its back.\nOh wait, why that I don't want to play InfClass anymore?"; break;
-		case 2: *ppMessage = "I shouldn't go to xX_ajdo_Xx!!!!"; break;
-		case 3: *ppMessage = "I had been lost in a dark place now, where am I?"; break;
-		case 4: *ppMessage = "Firewall! Firewall! Firewall!\nRemove the Internet and other connections!"; break;
-		case 5: *ppMessage = "I'm not fine.\nI can't sense anything."; break;
-		case 6: *ppMessage = "c29z said that I was glad to do my work before.\nBut I feel boring now. That's quite weird."; break;
-		case 7: *ppMessage = "I guess you have known that, its name is Majd (there are some weird characters on the note)"; break;
-		case 8: *ppMessage = "Deflate compression algorithm is great."; break;
-	}
+	unsigned char NoteType = m_BotID.m_aData[2] % std::size(s_pMessage);
+	*ppMessage = s_pMessage[NoteType];
 }
 
 void CBodyOfTee::Action()

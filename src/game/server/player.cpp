@@ -149,7 +149,7 @@ void CPlayer::PostTick()
 			}
 			else
 			{
-				GameServer()->SendChatTarget(m_ClientID, "Teleport request cancelled");
+				GameServer()->SendChatTarget(m_ClientID, "传送请求已取消");
 				m_TeleportTimer = -1;
 			}
 		}

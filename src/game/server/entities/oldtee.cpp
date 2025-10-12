@@ -37,18 +37,33 @@ bool COldTee::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, int W
 		int ClientID = ((CCharacter *) pFrom)->GetPlayer()->GetCID();
 		if(random_int() % 100 < 12)
 		{
-			GameServer()->BotManager()->SendChat(ClientID, "You asked my skin?", GetBotID());
-			GameServer()->BotManager()->SendChat(ClientID, "Some investigators thought my skin was too scary, so I changed it", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, "语言翻译已生效是么？", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, "那真是太好了。", GetBotID());
+		}
+		else if(random_int() % 100 < 12)
+		{
+			GameServer()->BotManager()->SendChat(ClientID, "我在想", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, "我们是不是做错了什么。", GetBotID());
+		}
+		else if(random_int() % 100 < 12)
+		{
+			GameServer()->BotManager()->SendChat(ClientID, "我的职位?", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, "我是电解协议来给S.U.L.F.U.R.做指挥的。", GetBotID());
+		}
+		else if(random_int() % 100 < 12)
+		{
+			GameServer()->BotManager()->SendChat(ClientID, "电解协议是什么?", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, "嗯...说来话长", GetBotID());
 		}
 		else if(random_int() % 100 < 12 && m_DarkMode)
 		{
-			GameServer()->BotManager()->SendChat(ClientID, "Congratulations, our in-game chat has been fixed", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, "或许你现在应该待在这里先。", GetBotID());
 		}
 		else
 		{
-			GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "Some new tasks are ahead of you" : "Where do you want to go?", GetBotID());
-			GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "If you have decided to finish them, just tell me." : "If you have decided, just tell me.", GetBotID());
-			GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "Hope you come back soon." : "For example: /goto FlowerFell-Sans.", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "尽管这里有任务要做" : "嗯...", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "但我不建议你现在就去" : "啊，你在这里？", GetBotID());
+			GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "最近又失踪了一些调查员" : "我？我在想它究竟是个什么东西呢。", GetBotID());
 		}
 	}
 	if(m_DarkMode)
@@ -144,10 +159,10 @@ bool COldTee::TriggerGo(int ClientID, const char *pGoTo)
 		return false;
 
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), m_DarkMode ? "You want to go to '%s'...?" : "You wanna go to '%s'?", pGoTo);
+	str_format(aBuf, sizeof(aBuf), "你想去'%s'...?", pGoTo);
 	GameServer()->BotManager()->SendChat(ClientID, aBuf, GetBotID());
-	GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "OK..." : "It's quite a good place, at least now", GetBotID());
-	GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "Hope you come back soon." : "Don't move in 3s if you are sure that is you want to go!", GetBotID());
+	GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "好吧..." : "现在去确实挺好的", GetBotID());
+	GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "希望你可以回来，但是先别动" : "如果你确定那是你要去的地方就请原地等待3s!", GetBotID());
 	GameServer()->m_apPlayers[ClientID]->TeleTo(pGoTo);
 	return true;
 }
@@ -178,7 +193,18 @@ void COldTee::Action()
 		{
 			m_RandomEmoteTimer = random_int() % 500 + 500;
 			GameServer()->BotManager()->SendEmoticon(random_int() % NUM_EMOTICONS, GetBotID());
-			GameServer()->BotManager()->SendChat(-1, m_DarkMode ? "Finally..." : "Ahh....So strange...", GetBotID());
+			if(random_int() % 2)
+			{
+				GameServer()->BotManager()->SendChat(-1, m_DarkMode ? "嘶..." : "...", GetBotID());
+			}
+			else if(random_int() % 2)
+			{
+				GameServer()->BotManager()->SendChat(-1, "如果你有什么问题就随时来问吧", GetBotID());
+			}
+			else if(random_int() % 2)
+			{
+				GameServer()->BotManager()->SendChat(-1, "唉...", GetBotID());
+			}
 		}
 	}
 }

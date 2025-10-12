@@ -847,7 +847,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					const CCommandManager::CCommand *pCommand = m_CommandManager.GetCommand(aCommand);
 					if(!pCommand)
 					{
-						SendChatTarget(ClientID, "No such command.");
+						SendChatTarget(ClientID, "没有此指令");
 						return;
 					}
 
@@ -1669,11 +1669,11 @@ void CGameContext::TeleportPlayerOutWorld(int ClientID, const char *pWorldName)
 	if(str_comp(pWorldName, "xX_ajdo_Xx") == 0)
 	{
 		pWorldName = "Majdom";
-		SendChatTarget(ClientID, "You feel creepy. Is that really where you want to be?");
+		SendChatTarget(ClientID, "你感到毛骨悚然，这里是你想去的地方么？");
 	}
 
 	Uuid WorldID = CalculateUuid(pWorldName);
-	SendChatTarget(ClientID, "Your request is received!");
+	SendChatTarget(ClientID, "你的请求已被接受");
 	if(!m_upWorlds.count(WorldID))
 	{
 		Server()->RequestNewWorld(ClientID, pWorldName);

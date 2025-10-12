@@ -328,9 +328,9 @@ void CGameController::Tick()
 		{
 			pWorld->TriggerDarkMode();
 		}
-		GameServer()->SendChatTarget(-1, "⚠ Experiencing severe signal interference ⚠");
-		GameServer()->SendChatTarget(-1, "⚠ Anomaly alert activated ⚠");
-		GameServer()->SendChatTarget(-1, "S.U.L.F.U.R. will protect your safety.");
+		GameServer()->SendChatTarget(-1, "⚠ 检测到信号干扰 ⚠");
+		GameServer()->SendChatTarget(-1, "⚠ 开始警戒 ⚠");
+		GameServer()->SendChatTarget(-1, "S.U.L.F.U.R.与电解协议将保护调查员的安全");
 	}
 	else if((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) == 0)
 	{
@@ -427,7 +427,7 @@ void CGameController::OnPlayerDeathWhenDarkMode(int ClientID)
 	int Time = 1200 - round_to_int((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) / Server()->TickSpeed());
 	// S.U.L.F.U.R. Scientific Unconventional Laboratory Field Unit Response 科学非常规现象调查局
 	char aBanMsg[128];
-	str_format(aBanMsg, sizeof(aBanMsg), "S.U.L.F.U.R. protected your safety.\nPlease re-execute the survey task after %d seconds", Time);
+	str_format(aBanMsg, sizeof(aBanMsg), "来自电解协议的指示: 务必彻底解决此次问题           S.U.L.F.U.R.请调查员在%d秒后重新进入", Time);
 	Server()->DoSpecialBan(ClientID, Time, aBanMsg);
 }
 
@@ -436,7 +436,7 @@ void CGameController::OnPlayerSwitchMap(int ClientID, Uuid OldMapID, Uuid NewMap
 	if(NewMapID == CalculateUuid("Void"))
 	{
 		char aMsg[128];
-		str_format(aMsg, sizeof(aMsg), "⚠ An investigator has lost in '%s'", Server()->GetMapName(OldMapID));
+		str_format(aMsg, sizeof(aMsg), "⚠ 有调查员在'%s'失踪了", Server()->GetMapName(OldMapID));
 		GameServer()->SendChatTarget(-1, aMsg);
 	}
 }

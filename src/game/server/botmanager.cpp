@@ -269,7 +269,7 @@ void CBotManager::ReadNote(int ClientID)
 	}
 	if(!pMessage)
 	{
-		GameServer()->SendChatTarget(ClientID, "Couldn't find anything to read");
+		GameServer()->SendChatTarget(ClientID, "这也没东西能读啊");
 	}
 	else
 	{
