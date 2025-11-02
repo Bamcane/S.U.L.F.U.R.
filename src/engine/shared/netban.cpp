@@ -265,14 +265,10 @@ void CNetBan::MakeBanInfo(CBan<T> *pBan, char *pBuf, unsigned BuffSize, int Type
 	int Time = time_timestamp();
 	if(pBan->m_Info.m_Expires != CBanInfo::EXPIRES_NEVER)
 	{
-		int Mins = ((pBan->m_Info.m_Expires - Time) + 59) / 60;
-		if(Mins <= 1)
-			str_format(pBuf, BuffSize, "%s for 1 minute (%s)", aBuf, pBan->m_Info.m_aReason);
-		else
-			str_format(pBuf, BuffSize, "%s for %d minutes (%s)", aBuf, Mins, pBan->m_Info.m_aReason);
+		str_format(pBuf, BuffSize, "%d seconds, %s", pBan->m_Info.m_Expires - Time, pBan->m_Info.m_aReason);
 	}
 	else
-		str_format(pBuf, BuffSize, "%s for life (%s)", aBuf, pBan->m_Info.m_aReason);
+		str_format(pBuf, BuffSize, "forever, %s", pBan->m_Info.m_aReason);
 
 	if(pLastInfoQuery)
 	{

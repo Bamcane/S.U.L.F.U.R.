@@ -307,18 +307,14 @@ void CGameController::Tick()
 			float x = -pChr->GetPos().x + pChr->GameWorld()->Collision()->GetWidth() * 32.f;
 			float y = pChr->GetPos().y;
 
-			GameServer()->CreatePlayerSpawn(pChr->GetPos(), pChr->GameWorld()->CmaskAllInWorld());
 			pChr->SetPos(vec2(x, y));
-			GameServer()->CreatePlayerSpawn(pChr->GetPos(), pChr->GameWorld()->CmaskAllInWorld());
 		}
 		else if(pChr->GetPos().x > pChr->GameWorld()->Collision()->GetWidth() * 32.f + 1200.f)
 		{
 			float x = -(pChr->GetPos().x - pChr->GameWorld()->Collision()->GetWidth() * 32.f);
 			float y = pChr->GetPos().y;
 
-			GameServer()->CreatePlayerSpawn(pChr->GetPos(), pChr->GameWorld()->CmaskAllInWorld());
 			pChr->SetPos(vec2(x, y));
-			GameServer()->CreatePlayerSpawn(pChr->GetPos(), pChr->GameWorld()->CmaskAllInWorld());
 		}
 	}
 
@@ -328,9 +324,7 @@ void CGameController::Tick()
 		{
 			pWorld->TriggerDarkMode();
 		}
-		GameServer()->SendChatTarget(-1, "⚠ 检测到信号干扰 ⚠");
-		GameServer()->SendChatTarget(-1, "⚠ 开始警戒 ⚠");
-		GameServer()->SendChatTarget(-1, "S.U.L.F.U.R.与电解协议将保护调查员的安全");
+		GameServer()->SendChatTarget(-1, "⚠ ... ⚠");
 	}
 	else if((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) == 0)
 	{
@@ -419,16 +413,15 @@ void CGameController::OnPlayerTeleport(int ClientID, const char *pString)
 {
 	if(str_comp(pString, "Void") == 0)
 		return;
-	GameServer()->BotManager()->m_pOldTee->TriggerGo(ClientID, pString);
+	GameServer()->m_apPlayers[ClientID]->TeleTo(pString);
+	GameServer()->SendChatTarget(ClientID, "...");
 }
 
 void CGameController::OnPlayerDeathWhenDarkMode(int ClientID)
 {
 	int Time = 1200 - round_to_int((Server()->Tick() - m_GameStartTick) % (1200 * Server()->TickSpeed()) / Server()->TickSpeed());
 	// S.U.L.F.U.R. Scientific Unconventional Laboratory Field Unit Response 科学非常规现象调查局
-	char aBanMsg[128];
-	str_format(aBanMsg, sizeof(aBanMsg), "来自电解协议的指示: 务必彻底解决此次问题           S.U.L.F.U.R.请调查员在%d秒后重新进入", Time);
-	Server()->DoSpecialBan(ClientID, Time, aBanMsg);
+	Server()->DoSpecialBan(ClientID, Time, "失效...");
 }
 
 void CGameController::OnPlayerSwitchMap(int ClientID, Uuid OldMapID, Uuid NewMapID)
@@ -436,7 +429,7 @@ void CGameController::OnPlayerSwitchMap(int ClientID, Uuid OldMapID, Uuid NewMap
 	if(NewMapID == CalculateUuid("Void"))
 	{
 		char aMsg[128];
-		str_format(aMsg, sizeof(aMsg), "⚠ 有调查员在'%s'失踪了", Server()->GetMapName(OldMapID));
+		str_format(aMsg, sizeof(aMsg), "⚠ ...%s", Server()->GetMapName(OldMapID));
 		GameServer()->SendChatTarget(-1, aMsg);
 	}
 }

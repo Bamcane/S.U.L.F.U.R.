@@ -22,7 +22,7 @@ COldTee::COldTee(CGameWorld *pWorld, vec2 Pos, Uuid BotID, STeeInfo TeeInfo) :
 	m_TeeInfos = m_DarkInfo;
 
 	m_Emote = EMOTE_NORMAL;
-	m_RandomEmoteTimer = random_int() % 500 + 500;
+	m_RandomEmoteTimer = random_int() % 250 + 250;
 }
 
 bool COldTee::IsFriendlyDamage(CEntity *pFrom)
@@ -163,7 +163,6 @@ bool COldTee::TriggerGo(int ClientID, const char *pGoTo)
 	GameServer()->BotManager()->SendChat(ClientID, aBuf, GetBotID());
 	GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "好吧..." : "现在去确实挺好的", GetBotID());
 	GameServer()->BotManager()->SendChat(ClientID, m_DarkMode ? "希望你可以回来，但是先别动" : "如果你确定那是你要去的地方就请原地等待3s!", GetBotID());
-	GameServer()->m_apPlayers[ClientID]->TeleTo(pGoTo);
 	return true;
 }
 
@@ -191,20 +190,16 @@ void COldTee::Action()
 		m_RandomEmoteTimer--;
 		if(!m_RandomEmoteTimer)
 		{
-			m_RandomEmoteTimer = random_int() % 500 + 500;
-			GameServer()->BotManager()->SendEmoticon(random_int() % NUM_EMOTICONS, GetBotID());
-			if(random_int() % 2)
+			m_RandomEmoteTimer = random_int() % 250 + 250;
+			int Sound = SOUND_TEE_CRY;
+			switch (random_int() % 4)
 			{
-				GameServer()->BotManager()->SendChat(-1, m_DarkMode ? "嘶..." : "...", GetBotID());
+				case 0: Sound = SOUND_TEE_CRY; break;
+				case 1: Sound = SOUND_PLAYER_PAIN_LONG; break;
+				case 2: Sound = SOUND_PLAYER_PAIN_SHORT; break;
+				case 3: Sound = SOUND_PLAYER_DIE; break;
 			}
-			else if(random_int() % 2)
-			{
-				GameServer()->BotManager()->SendChat(-1, "如果你有什么问题就随时来问吧", GetBotID());
-			}
-			else if(random_int() % 2)
-			{
-				GameServer()->BotManager()->SendChat(-1, "唉...", GetBotID());
-			}
+			GameServer()->CreateSoundGlobalNear(-1, Sound, 240.0f);
 		}
 	}
 }

@@ -165,11 +165,38 @@ void CGameContext::CreateSound(vec2 Pos, int Sound, int64 Mask)
 {
 	if(Sound < 0)
 		return;
+	if(GameController()->IsInDarkMode())
+		return; // no more sound.
 	CNetEvent_SoundWorld Event;
 	Event.m_X = (int) Pos.x;
 	Event.m_Y = (int) Pos.y;
 	Event.m_SoundID = Sound;
 	m_Events.Create(&Event, NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), Mask);
+}
+
+void CGameContext::CreateSoundGlobalNear(int Target, int Sound, float Distance)
+{
+	if(Target == -1)
+	{
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(!m_apPlayers[i])
+				continue;
+			CreateSoundGlobalNear(i, Sound, Distance);
+		}
+	}
+	else if(Target >= 0 && Target < MAX_CLIENTS && m_apPlayers[Target])
+	{
+		float Range = random_float() * Distance;
+		vec2 Direction(random_float() * 2.f - 1.f, random_float() * 2.f - 1.f);
+		vec2 Pos = m_apPlayers[Target]->m_ViewPos + Direction * Range;
+		CreateSound(Pos, Sound, CmaskOne(Target));
+	}
+}
+
+void CGameContext::CreateSoundGlobal(int Target, int Sound)
+{
+	CreateSoundGlobalNear(Target, Sound, 0.f);
 }
 
 // ----- send functions -----
@@ -1669,11 +1696,11 @@ void CGameContext::TeleportPlayerOutWorld(int ClientID, const char *pWorldName)
 	if(str_comp(pWorldName, "xX_ajdo_Xx") == 0)
 	{
 		pWorldName = "Majdom";
-		SendChatTarget(ClientID, "你感到毛骨悚然，这里是你想去的地方么？");
+		SendChatTarget(ClientID, "...?");
 	}
 
 	Uuid WorldID = CalculateUuid(pWorldName);
-	SendChatTarget(ClientID, "你的请求已被接受");
+	SendChatTarget(ClientID, "..");
 	if(!m_upWorlds.count(WorldID))
 	{
 		Server()->RequestNewWorld(ClientID, pWorldName);

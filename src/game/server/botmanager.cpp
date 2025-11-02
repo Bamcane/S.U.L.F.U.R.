@@ -77,6 +77,8 @@ void CBotManager::UpdatePlayerMap(int ClientID)
 			continue;
 		if(pBot->GameWorld() != GameServer()->m_apPlayers[ClientID]->GameWorld())
 			continue;
+		if(pBot == m_pOldTee)
+			continue;
 
 		std::pair<float, Uuid> Temp;
 		Temp.first = distance(GameServer()->m_apPlayers[ClientID]->m_ViewPos, pBot->GetPos());
@@ -269,7 +271,7 @@ void CBotManager::ReadNote(int ClientID)
 	}
 	if(!pMessage)
 	{
-		GameServer()->SendChatTarget(ClientID, "这也没东西能读啊");
+		GameServer()->SendChatTarget(ClientID, "?");
 	}
 	else
 	{
@@ -279,7 +281,7 @@ void CBotManager::ReadNote(int ClientID)
 	}
 }
 
-void CBotManager::CreateBodyOfTee(CGameWorld *pWorld, vec2 Pos)
+void CBotManager::CreateBodyOfTee(CGameWorld *pWorld, vec2 Pos, STeeInfo *pTeeInfo)
 {
 	// find first free bot id
 	Uuid FreeID = RandomUuid();
@@ -290,6 +292,8 @@ void CBotManager::CreateBodyOfTee(CGameWorld *pWorld, vec2 Pos)
 	pBot->SetMaxArmor(1);
 	pBot->IncreaseHealth(1);
 	pBot->IncreaseArmor(1);
+	if(pTeeInfo)
+		*pBot->GetTeeInfos() = *pTeeInfo;
 	m_vpBots[FreeID] = pBot;
 }
 

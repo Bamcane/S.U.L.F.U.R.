@@ -135,6 +135,8 @@ public:
 	void CreatePlayerSpawn(vec2 Pos, int64 Mask = -1LL);
 	void CreateDeath(vec2 Pos, int Who, int64 Mask = -1LL);
 	void CreateSound(vec2 Pos, int Sound, int64 Mask = -1LL);
+	void CreateSoundGlobalNear(int Target, int Sound, float Distance);
+	void CreateSoundGlobal(int Target, int Sound);
 
 	// ----- send functions -----
 	void SendChat(int ChatterClientID, int Mode, int To, const char *pText);

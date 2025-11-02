@@ -32,11 +32,11 @@ bool CBodyOfTee::TakeDamage(vec2 Force, vec2 Source, int Dmg, CEntity *pFrom, in
 		unsigned char Type = m_BotID.m_aData[0] % 5;
 		switch (Type)
 		{
-			case 0: GameServer()->SendChatTarget(ClientID, (m_BotID.m_aData[1] % 2) ? "她已经死了" : "他已经死了"); break;
-			case 1: GameServer()->SendChatTarget(ClientID, "毛骨悚然..."); break;
-			case 2: GameServer()->SendChatTarget(ClientID, "为什么..."); break;
-			case 3: GameServer()->SendChatTarget(ClientID, (m_BotID.m_aData[1] % 2) ? "谁杀了她?..." : "谁杀了他?..."); break;
-			case 4: GameServer()->SendChatTarget(ClientID, "找到了一篇笔记，读它么?(输入/read)");
+			case 0: Server()->DoSpecialBan(ClientID, 666, "LEAVE"); break;
+			case 1: GameServer()->SendChatTarget(ClientID, "..."); break;
+			case 2: GameServer()->SendChatTarget(ClientID, "...?"); break;
+			case 3: GameServer()->SendChatTarget(ClientID, ".." ); break;
+			case 4: GameServer()->SendChatTarget(ClientID, "(/read)");
 		}
 	}
 	return false;
@@ -110,16 +110,14 @@ void CBodyOfTee::Snap(int SnappingClient)
 }
 
 static const char *s_pMessage[] = {
-	"S.U.L.F.U.R.\n暂无发现任何异常，除了似乎我看见了一个激光笼子",
-	"c29z说我最近有些消极\n呃啊，医院也没什么检查出来的问题\n我也不知道怎么办好\n脑子烧成一团了\n我到底要去哪",
-	"这里的地形黑成了一片，似乎是Port的反色版本\n但是这里没有z92c\n不过我好像看见个什么东西...?",
-	"E8BF99E79C9FE79A84E69C89E6848FE4B989E4B988",
-	"-..----.--..... -..---.---.--.. ---.---...----- ---.--.-....-.. -.......------.- -.-...------.-- -...--.-..-..-.- --...-....-...- -..---..-..-...",
-	"That's not useful",
-	"Give up",
-	"我还不能放弃...c29z博士还在等着...",
 	"Password is....ELECTROLYSIS16",
-	"ep.teeworlds.wiki"
+	"ep.teeworlds.wiki",
+	"LEAVE OUT",
+	"Disappearing into history...",
+	"AREN'T THESE YOUR WRONG...",
+	"MY WORK IS USELESS... ISN'T IT...?\nI CAN'T SAVE IT...\nALTHOUGH I LOVE THIS GAME.\n\n09/08/2024 cropot",
+	"I CAN DO THAT. YEAH, I CAN.\nPotwork...\nI WOULD SAVE IT...\n\n08/27/2024 cropt",
+	"I LOSE IT...\nTHE WORLD LOSE THE Potwork COMMMUNITY\nTHE WORLD USE OutNetwork TO REPLACE IT...\nTHERE WILL NEVER BE Potwork 6.5.0...\n\n09/07/2024 cropot"
 };
 void CBodyOfTee::TriggerRead(int ClientID, const char **ppMessage)
 {

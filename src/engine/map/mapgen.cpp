@@ -228,13 +228,13 @@ void CMapGen::GenerateBackground()
 	srand(IntSeed);
 	{
 		SQuad *pQuad = pLayer->AddQuad(vec2(0, 0), vec2(1600, 1200));
-		pQuad->m_aColors[0].r = pQuad->m_aColors[1].r = random_int() % 155;
-		pQuad->m_aColors[0].g = pQuad->m_aColors[1].g = random_int() % 155;
-		pQuad->m_aColors[0].b = pQuad->m_aColors[1].b = random_int() % 155;
+		pQuad->m_aColors[0].r = pQuad->m_aColors[1].r = random_int() % 30 + 20;
+		pQuad->m_aColors[0].g = pQuad->m_aColors[1].g = random_int() % 10;
+		pQuad->m_aColors[0].b = pQuad->m_aColors[1].b = random_int() % 10;
 		pQuad->m_aColors[0].a = pQuad->m_aColors[1].a = 255;
-		pQuad->m_aColors[2].r = pQuad->m_aColors[3].r = random_int() % 155;
-		pQuad->m_aColors[2].g = pQuad->m_aColors[3].g = random_int() % 155;
-		pQuad->m_aColors[2].b = pQuad->m_aColors[3].b = random_int() % 155;
+		pQuad->m_aColors[2].r = pQuad->m_aColors[3].r = random_int() % 30 + 20;
+		pQuad->m_aColors[2].g = pQuad->m_aColors[3].g = random_int() % 10;
+		pQuad->m_aColors[2].b = pQuad->m_aColors[3].b = random_int() % 10;
 		pQuad->m_aColors[2].a = pQuad->m_aColors[3].a = 255;
 	}
 }
@@ -355,14 +355,14 @@ void CMapGen::UseDarkMode()
 			pPoint->m_aValues[0] = 255.f / 255.f;
 			pPoint->m_aValues[1] = 255.f / 255.f;
 			pPoint->m_aValues[2] = 255.f / 255.f;
-			pPoint->m_aValues[3] = 0.f;
+			pPoint->m_aValues[3] = 100.f / 255.f;
 		}
 		{
 			pPoint = pEnv->AddEnvPoint(6e5, CURVETYPE_SMOOTH);
 			pPoint->m_aValues[0] = 255.f / 255.f;
 			pPoint->m_aValues[1] = 255.f / 255.f;
 			pPoint->m_aValues[2] = 255.f / 255.f;
-			pPoint->m_aValues[3] = 0.f;
+			pPoint->m_aValues[3] = 100.f / 255.f;
 		}
 		{
 			pPoint = pEnv->AddEnvPoint(6e5 + 10e3, CURVETYPE_SMOOTH);
@@ -383,7 +383,7 @@ void CMapGen::UseDarkMode()
 			pPoint->m_aValues[0] = 255.f / 255.f;
 			pPoint->m_aValues[1] = 255.f / 255.f;
 			pPoint->m_aValues[2] = 255.f / 255.f;
-			pPoint->m_aValues[3] = 0.f;
+			pPoint->m_aValues[3] = 100.f / 255.f;
 		}
 	}
 	{
@@ -416,11 +416,13 @@ void CMapGen::GenerateMap(bool CreateCenter)
 			m_pHookableLayer = m_pMainGroup->AddTileLayer("Hookable");
 			m_pHookableLayer->m_pImage = m_pMapCreater->AddExternalImage("grass_main", 1024, 1024);
 			m_pHookableLayer->m_UseInMinimap = true;
+			m_pHookableLayer->m_Color = ColorRGBA{155, 0, 0, 255};
 		}
 		{
 			m_pUnhookableLayer = m_pMainGroup->AddTileLayer("Unhookable");
 			m_pUnhookableLayer->m_pImage = m_pMapCreater->AddExternalImage("generic_unhookable", 1024, 1024);
 			m_pUnhookableLayer->m_UseInMinimap = true;
+			m_pUnhookableLayer->m_Color = ColorRGBA{155, 0, 0, 255};
 		}
 		// Generate hookable tile
 		std::thread(&CMapGen::GenerateHookable, this).join();

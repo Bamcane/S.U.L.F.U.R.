@@ -299,6 +299,8 @@ void CCharacter::FireWeapon()
 			pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, Dir * -1, GameServer()->GameController()->GetWeaponDamage(WEAPON_HAMMER, GameWorld()),
 				this, m_ActiveWeapon);
 			Hits++;
+			if(!m_Alive)
+				return;
 		}
 
 		// if we Hit anything, we have to wait for the reload
@@ -375,6 +377,8 @@ void CCharacter::FireWeapon()
 	}
 	break;
 	}
+	if(!m_Alive)
+		return;
 
 	m_AttackTick = Server()->Tick();
 
@@ -730,6 +734,13 @@ void CCharacter::Die(CEntity *pKiller, int Weapon)
 	CDamageEntity::Die(pKiller, Weapon);
 	GameWorld()->m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID(), CmaskAllInWorld());
+
+	m_Alive = false;
+	if(GameServer()->GameController()->IsInDarkMode())
+	{
+		GameServer()->GameController()->OnPlayerDeathWhenDarkMode(m_pPlayer->GetCID());
+		return;
+	}
 }
 
 void CCharacter::Snap(int SnappingClient)

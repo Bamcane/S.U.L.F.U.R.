@@ -32,7 +32,6 @@ CBotEntity::CBotEntity(CGameWorld *pWorld, vec2 Pos, Uuid BotID, STeeInfo TeeInf
 	mem_zero(&m_Input, sizeof(m_Input));
 	mem_zero(&m_PrevInput, sizeof(m_PrevInput));
 
-	GameServer()->CreatePlayerSpawn(Pos, CmaskAllInWorld());
 	GameWorld()->InsertEntity(this);
 }
 
@@ -217,6 +216,9 @@ void CBotEntity::Die(CEntity *pKiller, int Weapon)
 
 	if(GameServer()->BotManager())
 		GameServer()->BotManager()->OnBotDeath(GetBotID());
+	
+	if(Weapon != WEAPON_WORLD)
+		GameServer()->BotManager()->CreateBodyOfTee(GameWorld(), m_Pos, GetTeeInfos());
 }
 
 bool CBotEntity::IsFriendlyDamage(CEntity *pFrom)

@@ -76,12 +76,6 @@ void CPlayer::Tick()
 	{
 		delete m_pCharacter;
 		m_pCharacter = 0;
-		if(GameServer()->GameController()->IsInDarkMode())
-		{
-			GameServer()->CreatePlayerSpawn(m_ViewPos, GameWorld()->CmaskAllInWorld());
-			GameServer()->GameController()->OnPlayerDeathWhenDarkMode(m_ClientID);
-			return;
-		}
 	}
 
 	if(!m_pCharacter && m_Team == TEAM_SPECTATORS && m_SpecMode == SPEC_FREEVIEW)
@@ -149,7 +143,7 @@ void CPlayer::PostTick()
 			}
 			else
 			{
-				GameServer()->SendChatTarget(m_ClientID, "传送请求已取消");
+				GameServer()->SendChatTarget(m_ClientID, "!");
 				m_TeleportTimer = -1;
 			}
 		}
@@ -273,6 +267,17 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
 
 	m_PlayerFlags = NewInput->m_PlayerFlags;
 
+	// check for activity
+	if(NewInput->m_Direction || m_LatestActivity.m_TargetX != NewInput->m_TargetX ||
+		m_LatestActivity.m_TargetY != NewInput->m_TargetY || NewInput->m_Jump ||
+		NewInput->m_Fire & 1 || NewInput->m_Hook)
+	{
+		m_LatestActivity.m_TargetX = NewInput->m_TargetX;
+		m_LatestActivity.m_TargetY = NewInput->m_TargetY;
+		m_LastActionTick = Server()->Tick();
+		m_InactivityTickCounter = 0;
+	}
+
 	if(m_pCharacter)
 		m_pCharacter->OnDirectInput(NewInput);
 
@@ -314,17 +319,6 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
 	}
 	else if(m_ActiveSpecSwitch)
 		m_ActiveSpecSwitch = false;
-
-	// check for activity
-	if(NewInput->m_Direction || m_LatestActivity.m_TargetX != NewInput->m_TargetX ||
-		m_LatestActivity.m_TargetY != NewInput->m_TargetY || NewInput->m_Jump ||
-		NewInput->m_Fire & 1 || NewInput->m_Hook)
-	{
-		m_LatestActivity.m_TargetX = NewInput->m_TargetX;
-		m_LatestActivity.m_TargetY = NewInput->m_TargetY;
-		m_LastActionTick = Server()->Tick();
-		m_InactivityTickCounter = 0;
-	}
 }
 
 CCharacter *CPlayer::GetCharacter()
@@ -490,13 +484,11 @@ void CPlayer::TryRespawn()
 	m_Spawning = false;
 	m_pCharacter = new(m_ClientID) CCharacter(GameWorld());
 	m_pCharacter->Spawn(this, SpawnPos);
-	GameServer()->CreatePlayerSpawn(SpawnPos, GameWorld()->CmaskAllInWorld());
+	GameServer()->CreatePlayerSpawn(SpawnPos, CmaskOne(m_ClientID));
 }
 
 void CPlayer::SwitchWorld(CGameWorld *pWorld)
 {
-	if(m_pCharacter)
-		GameServer()->CreatePlayerSpawn(m_pCharacter->GetPos(), GameWorld()->CmaskAllInWorldExceptOne(m_ClientID));
 	m_pGameWorld = pWorld;
 	KillCharacter();
 	m_SwitchingMap = true;

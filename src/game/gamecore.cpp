@@ -122,7 +122,7 @@ void CCharacterCore::Tick(bool UseInput)
 				{
 					m_TriggeredEvents |= COREEVENTFLAG_AIR_JUMP;
 					m_Vel.y = -m_pWorld->m_Tuning.m_AirJumpImpulse;
-					m_Jumped |= 3;
+					m_Jumped |= 1;
 				}
 			}
 		}
